@@ -22,12 +22,10 @@ public class MainActivity extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        // UI Animation Logic (অ্যাপ ওপেন হলে সুন্দর স্লাইড অ্যানিমেশন হবে)
         LinearLayout mainLayout = findViewById(R.id.main_layout);
         Animation slideUp = AnimationUtils.loadAnimation(this, R.anim.slide_up);
         mainLayout.startAnimation(slideUp);
 
-        // Notification Permission for Background Running (Android 13+)
         if (Build.VERSION.SDK_INT >= 33) {
             if (checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
                 requestPermissions(new String[]{Manifest.permission.POST_NOTIFICATIONS}, 101);
@@ -61,7 +59,7 @@ public class MainActivity extends Activity {
             }
         });
 
-        // App Start Logic
+        // App Start and Instagram Launch Logic
         btnStart.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -70,13 +68,24 @@ public class MainActivity extends Activity {
                     return;
                 }
                 
+                // ১. ওভারলে সার্ভিস স্টার্ট করা হচ্ছে এবং সরাসরি SHOW অ্যাকশন পাঠানো হচ্ছে
                 Intent serviceIntent = new Intent(MainActivity.this, OverlayService.class);
+                serviceIntent.putExtra("ACTION", "SHOW");
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                     startForegroundService(serviceIntent);
                 } else {
                     startService(serviceIntent);
                 }
-                Toast.makeText(MainActivity.this, "Scroll Battle শুরু হয়েছে! Instagram খুলুন।", Toast.LENGTH_LONG).show();
+
+                // ২. সরাসরি ইনস্টাগ্রাম অ্যাপ ওপেন করার প্রফেশনাল লজিক
+                Intent launchIntent = getPackageManager().getLaunchIntentForPackage("com.instagram.android");
+                if (launchIntent != null) {
+                    startActivity(launchIntent);
+                    Toast.makeText(MainActivity.this, "Scroll Battle শুরু হয়েছে!", Toast.LENGTH_SHORT).show();
+                } else {
+                    // যদি ফোনে ইনস্টাগ্রাম ইন্সটল না থাকে
+                    Toast.makeText(MainActivity.this, "ইনস্টাগ্রাম অ্যাপটি খুঁজে পাওয়া যায়নি!", Toast.LENGTH_LONG).show();
+                }
             }
         });
     }
