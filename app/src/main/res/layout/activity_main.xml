@@ -20,13 +20,24 @@
         android:id="@+id/btn_overlay_permission"
         android:layout_width="match_parent"
         android:layout_height="60dp"
-        android:text="1. Grant Display Overlay Permission"/>
+        android:text="1. Grant Display Overlay"/>
 
     <Button
         android:id="@+id/btn_accessibility_permission"
         android:layout_width="match_parent"
         android:layout_height="60dp"
-        android:layout_marginTop="20dp"
-        android:text="2. Grant Accessibility Permission"/>
+        android:layout_marginTop="15dp"
+        android:text="2. Grant Accessibility"/>
+
+    <!-- নতুন স্টার্ট বাটন -->
+    <Button
+        android:id="@+id/btn_start_app"
+        android:layout_width="match_parent"
+        android:layout_height="60dp"
+        android:layout_marginTop="40dp"
+        android:backgroundTint="#009688"
+        android:textColor="#FFFFFF"
+        android:text="3. START SCROLL BATTLE"/>
 
 </LinearLayout>
+

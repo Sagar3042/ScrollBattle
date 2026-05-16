@@ -5,8 +5,9 @@
     <!-- Permissions -->
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
 
-    <!-- Application Setup (লোগো অ্যাড করা হয়েছে) -->
     <application
         android:allowBackup="true"
         android:icon="@drawable/app_logo"
@@ -14,9 +15,7 @@
         android:supportsRtl="true"
         android:theme="@android:style/Theme.NoTitleBar">
 
-        <activity
-            android:name=".MainActivity"
-            android:exported="true">
+        <activity android:name=".MainActivity" android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
@@ -35,10 +34,11 @@
                 android:resource="@xml/accessibility_service_config" />
         </service>
 
-        <!-- নতুন যোগ করা Overlay Service -->
+        <!-- Overlay Service with Android 14 Foreground Type -->
         <service 
             android:name=".OverlayService" 
-            android:exported="false" />
+            android:exported="false"
+            android:foregroundServiceType="specialUse" />
 
     </application>
 </manifest>
