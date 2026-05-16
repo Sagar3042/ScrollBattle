@@ -2,6 +2,11 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.sagar.scrollbattle">
 
+    <!-- অ্যান্ড্রয়েড ১১+ এর জন্য ইনস্টাগ্রাম প্যাকেজ ভিজিবিলিটি কুয়েরি -->
+    <queries>
+        <package android:name="com.instagram.android" />
+    </queries>
+
     <!-- Permissions -->
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
@@ -34,7 +39,6 @@
                 android:resource="@xml/accessibility_service_config" />
         </service>
 
-        <!-- Overlay Service with Android 14 Foreground Type -->
         <service 
             android:name=".OverlayService" 
             android:exported="false"
