@@ -19,6 +19,7 @@ public class OverlayService extends Service {
     private WindowManager windowManager;
     private View floatingView;
     private TextView textScrollCount;
+    private boolean isOverlayAdded = false;
 
     @Override
     public IBinder onBind(Intent intent) { return null; }
@@ -27,7 +28,7 @@ public class OverlayService extends Service {
     public void onCreate() {
         super.onCreate();
         
-        // Foreground Service Notification (Android 8+)
+        // Foreground Service Notification
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             NotificationChannel channel = new NotificationChannel(
                     "ScrollBattleChannel", "Scroll Battle", NotificationManager.IMPORTANCE_LOW);
@@ -35,8 +36,8 @@ public class OverlayService extends Service {
             if (manager != null) manager.createNotificationChannel(channel);
             
             Notification notification = new Notification.Builder(this, "ScrollBattleChannel")
-                    .setContentTitle("Scroll Battle Active")
-                    .setContentText("Tracking Instagram Reels")
+                    .setContentTitle("Scroll Battle")
+                    .setContentText("অপেক্ষা করছে...")
                     .setSmallIcon(android.R.drawable.ic_dialog_info)
                     .build();
             startForeground(1, notification);
@@ -47,7 +48,11 @@ public class OverlayService extends Service {
         floatingView = LayoutInflater.from(this).inflate(R.layout.floating_layout, null);
         textScrollCount = floatingView.findViewById(R.id.text_scroll_count);
 
-        int layoutFlag = (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) ? WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY : WindowManager.LayoutParams.TYPE_PHONE;
+        // অ্যাপটি স্টার্ট হওয়ার সাথে সাথে ওভারলে স্ক্রিনে লুকানো (Hidden) অবস্থায় থাকবে
+        floatingView.setVisibility(View.GONE);
+
+        int layoutFlag = (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) ? 
+                WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY : WindowManager.LayoutParams.TYPE_PHONE;
 
         WindowManager.LayoutParams params = new WindowManager.LayoutParams(
                 WindowManager.LayoutParams.WRAP_CONTENT,
@@ -56,20 +61,32 @@ public class OverlayService extends Service {
                 WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
                 PixelFormat.TRANSLUCENT);
 
-        // ফ্লোটিং উইন্ডো স্ক্রিনের উপরে মাঝখানে দেখাবে
         params.gravity = Gravity.TOP | Gravity.CENTER_HORIZONTAL;
         params.y = 100;
 
         windowManager.addView(floatingView, params);
+        isOverlayAdded = true;
     }
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        // ScrollAccessibilityService থেকে পাঠানো স্ক্রল কাউন্ট আপডেট করা
-        if (intent != null && intent.hasExtra("SCROLL_COUNT")) {
-            int count = intent.getIntExtra("SCROLL_COUNT", 0);
-            if (textScrollCount != null) {
-                textScrollCount.setText("Reels Scrolled: " + count);
+        if (intent != null && intent.hasExtra("ACTION")) {
+            String action = intent.getStringExtra("ACTION");
+            
+            // AccessibilityService থেকে আসা কমান্ড অনুযায়ী কাজ
+            if (action.equals("SHOW")) {
+                if (floatingView != null) {
+                    floatingView.setVisibility(View.VISIBLE);
+                }
+            } else if (action.equals("HIDE")) {
+                if (floatingView != null) {
+                    floatingView.setVisibility(View.GONE);
+                }
+            } else if (action.equals("UPDATE_COUNT")) {
+                int count = intent.getIntExtra("SCROLL_COUNT", 0);
+                if (textScrollCount != null) {
+                    textScrollCount.setText("Reels Scrolled: " + count);
+                }
             }
         }
         return START_STICKY;
@@ -78,8 +95,9 @@ public class OverlayService extends Service {
     @Override
     public void onDestroy() {
         super.onDestroy();
-        if (floatingView != null) {
+        if (floatingView != null && isOverlayAdded) {
             windowManager.removeView(floatingView);
         }
     }
 }
+

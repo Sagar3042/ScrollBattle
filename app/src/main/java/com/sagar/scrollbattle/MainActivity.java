@@ -9,7 +9,10 @@ import android.os.Build;
 import android.os.Bundle;
 import android.provider.Settings;
 import android.view.View;
+import android.view.animation.Animation;
+import android.view.animation.AnimationUtils;
 import android.widget.Button;
+import android.widget.LinearLayout;
 import android.widget.Toast;
 
 public class MainActivity extends Activity {
@@ -18,6 +21,11 @@ public class MainActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        // UI Animation Logic (অ্যাপ ওপেন হলে সুন্দর স্লাইড অ্যানিমেশন হবে)
+        LinearLayout mainLayout = findViewById(R.id.main_layout);
+        Animation slideUp = AnimationUtils.loadAnimation(this, R.anim.slide_up);
+        mainLayout.startAnimation(slideUp);
 
         // Notification Permission for Background Running (Android 13+)
         if (Build.VERSION.SDK_INT >= 33) {
@@ -62,7 +70,6 @@ public class MainActivity extends Activity {
                     return;
                 }
                 
-                // Overlay Service স্টার্ট করা হচ্ছে
                 Intent serviceIntent = new Intent(MainActivity.this, OverlayService.class);
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                     startForegroundService(serviceIntent);
