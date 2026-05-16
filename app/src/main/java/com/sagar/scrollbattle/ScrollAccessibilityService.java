@@ -14,50 +14,58 @@ public class ScrollAccessibilityService extends AccessibilityService {
 
     @Override
     public void onAccessibilityEvent(AccessibilityEvent event) {
-        
-        // ১. ১০০% নিখুঁত স্মার্ট ওভারলে ভিজিবিলিটি লজিক
-        if (event.getEventType() == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED || 
-            event.getEventType() == AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED) {
-            
-            CharSequence packageName = event.getPackageName();
+        if (event == null) return;
+
+        int eventType = event.getEventType();
+        CharSequence packNameChar = event.getPackageName();
+        String currentPackage = (packNameChar != null) ? packNameChar.toString() : "";
+
+        // ১. উইন্ডো চেঞ্জ ডিটেকশন (ইনস্টাগ্রাম ওপেন/মিনিমাইজ/ক্লোজ)
+        if (eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) {
             Intent intent = new Intent(this, OverlayService.class);
             
-            if (packageName != null && packageName.toString().equals("com.instagram.android")) {
-                // ইউজার ইনস্টাগ্রামের ভেতরে থাকলে ওভারলে দেখাবে
+            if (currentPackage.equals("com.instagram.android")) {
                 intent.putExtra("ACTION", "SHOW");
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                    startForegroundService(intent);
-                } else {
-                    startService(intent);
-                }
-            } else {
-                // মিনিমাইজ করলে, ব্যাক করলে বা প্যাকেজ নেম অন্য কিছু বা null হলে ওভারলে সাথে সাথে লুকিয়ে যাবে
+                Log.d("ScrollBattle", "Instagram View Detected - Overlay Show");
+            } else if (!currentPackage.equals("com.sagar.scrollbattle") && !currentPackage.isEmpty()) {
+                // ইউজার যদি আমাদের অ্যাপ বা ইনস্টাগ্রাম ছাড়া অন্য কোনো লিজিট অ্যাপে (যেমন হোম স্ক্রিন বা ফেসবুক) যায়
                 intent.putExtra("ACTION", "HIDE");
+                Log.d("ScrollBattle", "Left Instagram - Overlay Hide");
+            }
+            
+            try {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                     startForegroundService(intent);
                 } else {
                     startService(intent);
                 }
+            } catch (Exception e) {
+                Log.e("ScrollBattle", "Error starting service for window change: " + e.getMessage());
             }
         }
 
-        // ২. রিলস স্ক্রল কাউন্টিং লজিক
-        if (event.getEventType() == AccessibilityEvent.TYPE_VIEW_SCROLLED) {
-            if (event.getPackageName() != null && event.getPackageName().equals("com.instagram.android")) {
+        // ২. নিখুঁত স্ক্রল কাউন্টিং লজিক
+        if (eventType == AccessibilityEvent.TYPE_VIEW_SCROLLED) {
+            if (currentPackage.equals("com.instagram.android")) {
                 long currentTime = System.currentTimeMillis();
                 
                 if ((currentTime - lastScrollTime) > SCROLL_COOLDOWN_MS) {
                     scrollCount++;
                     lastScrollTime = currentTime;
+                    Log.d("ScrollBattle", "Valid Scroll Counted: " + scrollCount);
 
                     Intent intent = new Intent(this, OverlayService.class);
                     intent.putExtra("ACTION", "UPDATE_COUNT");
                     intent.putExtra("SCROLL_COUNT", scrollCount);
                     
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                        startForegroundService(intent);
-                    } else {
-                        startService(intent);
+                    try {
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                            startForegroundService(intent);
+                        } else {
+                            startService(intent);
+                        }
+                    } catch (Exception e) {
+                        Log.e("ScrollBattle", "Error starting service for scroll: " + e.getMessage());
                     }
                 }
             }
