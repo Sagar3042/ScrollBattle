@@ -16,44 +16,21 @@ public class ScrollAccessibilityService extends AccessibilityService {
     public void onAccessibilityEvent(AccessibilityEvent event) {
         if (event == null) return;
 
-        int eventType = event.getEventType();
-        CharSequence packNameChar = event.getPackageName();
-        String currentPackage = (packNameChar != null) ? packNameChar.toString() : "";
+        // আমরা শুধু স্ক্রল ইভেন্ট এবং ইনস্টাগ্রাম প্যাকেজ ট্র্যাক করব
+        if (event.getEventType() == AccessibilityEvent.TYPE_VIEW_SCROLLED) {
+            CharSequence packNameChar = event.getPackageName();
+            String currentPackage = (packNameChar != null) ? packNameChar.toString() : "";
 
-        // ১. উইন্ডো চেঞ্জ ডিটেকশন (ইনস্টাগ্রাম ওপেন/মিনিমাইজ/ক্লোজ)
-        if (eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) {
-            Intent intent = new Intent(this, OverlayService.class);
-            
-            if (currentPackage.equals("com.instagram.android")) {
-                intent.putExtra("ACTION", "SHOW");
-                Log.d("ScrollBattle", "Instagram View Detected - Overlay Show");
-            } else if (!currentPackage.equals("com.sagar.scrollbattle") && !currentPackage.isEmpty()) {
-                // ইউজার যদি আমাদের অ্যাপ বা ইনস্টাগ্রাম ছাড়া অন্য কোনো লিজিট অ্যাপে (যেমন হোম স্ক্রিন বা ফেসবুক) যায়
-                intent.putExtra("ACTION", "HIDE");
-                Log.d("ScrollBattle", "Left Instagram - Overlay Hide");
-            }
-            
-            try {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                    startForegroundService(intent);
-                } else {
-                    startService(intent);
-                }
-            } catch (Exception e) {
-                Log.e("ScrollBattle", "Error starting service for window change: " + e.getMessage());
-            }
-        }
-
-        // ২. নিখুঁত স্ক্রল কাউন্টিং লজিক
-        if (eventType == AccessibilityEvent.TYPE_VIEW_SCROLLED) {
             if (currentPackage.equals("com.instagram.android")) {
                 long currentTime = System.currentTimeMillis();
                 
+                // ১.৫ সেকেন্ডের রিয়েল স্ক্রল ডিটেকশন
                 if ((currentTime - lastScrollTime) > SCROLL_COOLDOWN_MS) {
                     scrollCount++;
                     lastScrollTime = currentTime;
-                    Log.d("ScrollBattle", "Valid Scroll Counted: " + scrollCount);
+                    Log.d("ScrollBattle", "Valid Reels Scroll: " + scrollCount);
 
+                    // সরাসরি ওভারলে সার্ভিসে কাউন্ট পাঠানো হচ্ছে যা ওভারলেকে ১০ সেকেন্ডের জন্য পপ-আপ করাবে
                     Intent intent = new Intent(this, OverlayService.class);
                     intent.putExtra("ACTION", "UPDATE_COUNT");
                     intent.putExtra("SCROLL_COUNT", scrollCount);
@@ -65,7 +42,7 @@ public class ScrollAccessibilityService extends AccessibilityService {
                             startService(intent);
                         }
                     } catch (Exception e) {
-                        Log.e("ScrollBattle", "Error starting service for scroll: " + e.getMessage());
+                        Log.e("ScrollBattle", "Error starting service: " + e.getMessage());
                     }
                 }
             }

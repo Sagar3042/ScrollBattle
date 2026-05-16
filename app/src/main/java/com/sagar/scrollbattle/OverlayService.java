@@ -7,7 +7,9 @@ import android.app.Service;
 import android.content.Intent;
 import android.graphics.PixelFormat;
 import android.os.Build;
+import android.os.Handler;
 import android.os.IBinder;
+import android.os.Looper;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -20,6 +22,17 @@ public class OverlayService extends Service {
     private View floatingView;
     private TextView textScrollCount;
     private boolean isOverlayAdded = false;
+
+    // ১০ সেকেন্ড পর অটো-হাইড করার জন্য টাইমার এবং হ্যান্ডলার
+    private final Handler hideHandler = new Handler(Looper.getMainLooper());
+    private final Runnable hideRunnable = new Runnable() {
+        @Override
+        public void run() {
+            if (floatingView != null) {
+                floatingView.setVisibility(View.GONE);
+            }
+        }
+    };
 
     @Override
     public IBinder onBind(Intent intent) { return null; }
@@ -36,8 +49,8 @@ public class OverlayService extends Service {
             if (manager != null) manager.createNotificationChannel(channel);
             
             Notification notification = new Notification.Builder(this, "ScrollBattleChannel")
-                    .setContentTitle("Scroll Battle")
-                    .setContentText("অপেক্ষা করছে...")
+                    .setContentTitle("Scroll Battle Running")
+                    .setContentText("Ready to track reels...")
                     .setSmallIcon(android.R.drawable.ic_dialog_info)
                     .build();
             startForeground(1, notification);
@@ -48,7 +61,7 @@ public class OverlayService extends Service {
         floatingView = LayoutInflater.from(this).inflate(R.layout.floating_layout, null);
         textScrollCount = floatingView.findViewById(R.id.text_scroll_count);
 
-        // অ্যাপটি স্টার্ট হওয়ার সাথে সাথে ওভারলে স্ক্রিনে লুকানো (Hidden) অবস্থায় থাকবে
+        // শুরুতে ওভারলে পুরোপুরি লুকিয়ে থাকবে
         floatingView.setVisibility(View.GONE);
 
         int layoutFlag = (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) ? 
@@ -62,7 +75,7 @@ public class OverlayService extends Service {
                 PixelFormat.TRANSLUCENT);
 
         params.gravity = Gravity.TOP | Gravity.CENTER_HORIZONTAL;
-        params.y = 100;
+        params.y = 150; // স্ক্রিনের সামান্য নিচে যাতে নোটিফিকেশন বারে ধাক্কা না খায়
 
         windowManager.addView(floatingView, params);
         isOverlayAdded = true;
@@ -73,20 +86,22 @@ public class OverlayService extends Service {
         if (intent != null && intent.hasExtra("ACTION")) {
             String action = intent.getStringExtra("ACTION");
             
-            // AccessibilityService থেকে আসা কমান্ড অনুযায়ী কাজ
-            if (action.equals("SHOW")) {
-                if (floatingView != null) {
-                    floatingView.setVisibility(View.VISIBLE);
-                }
-            } else if (action.equals("HIDE")) {
-                if (floatingView != null) {
-                    floatingView.setVisibility(View.GONE);
-                }
-            } else if (action.equals("UPDATE_COUNT")) {
+            if (action.equals("UPDATE_COUNT")) {
                 int count = intent.getIntExtra("SCROLL_COUNT", 0);
                 if (textScrollCount != null) {
                     textScrollCount.setText("Reels Scrolled: " + count);
                 }
+
+                // ১. স্ক্রল করার সাথে সাথে ওভারলে শো করো
+                if (floatingView != null) {
+                    floatingView.setVisibility(View.VISIBLE);
+                }
+
+                // ২. আগের কোনো রানিং টাইমার থাকলে তা বাতিল (Reset) করো
+                hideHandler.removeCallbacks(hideRunnable);
+
+                // ৩. নতুন করে ঠিক ১০ সেকেন্ড (10,000 মিলিসেকেন্ড) পর হাইড করার টাইমার সেট করো
+                hideHandler.postDelayed(hideRunnable, 10000);
             }
         }
         return START_STICKY;
@@ -95,6 +110,7 @@ public class OverlayService extends Service {
     @Override
     public void onDestroy() {
         super.onDestroy();
+        hideHandler.removeCallbacks(hideRunnable);
         if (floatingView != null && isOverlayAdded) {
             windowManager.removeView(floatingView);
         }
