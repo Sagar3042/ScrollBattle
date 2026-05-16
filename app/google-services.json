@@ -15,6 +15,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "499059166053-vi8fn8cvete69guuu92ejt9rn98t1894.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.sagar.scrollbattle",
+            "certificate_hash": "58405d1686b9eab31e298c09f71592f6c4026de8"
+          }
+        },
+        {
           "client_id": "499059166053-68bshad7elt069166vl00accklakhu5m.apps.googleusercontent.com",
           "client_type": 3
         }
