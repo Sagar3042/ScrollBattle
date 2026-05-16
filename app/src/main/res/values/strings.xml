@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Scroll Battle</string>
+    <string name="accessibility_description">Instagram-এর রিলস স্ক্রল ট্র্যাক করার জন্য এই পারমিশনটি প্রয়োজন।</string>
+</resources>
