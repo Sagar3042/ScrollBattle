@@ -1,11 +1,21 @@
 plugins {
     id 'com.android.application'
-    id 'com.google.gms.google-services' // Google Services প্লাগিন যুক্ত করা হলো
+    id 'com.google.gms.google-services'
 }
 
 android {
     namespace 'com.sagar.scrollbattle'
     compileSdk 34
+
+    // আমাদের কাস্টম ডিজিটাল সিগনেচার কনফিগারেশন
+    signingConfigs {
+        debug {
+            storeFile file('debug.keystore')
+            storePassword 'android'
+            keyAlias 'androiddebugkey'
+            keyPassword 'android'
+        }
+    }
 
     defaultConfig {
         applicationId "com.sagar.scrollbattle"
@@ -16,7 +26,12 @@ android {
     }
 
     buildTypes {
+        debug {
+            signingConfig signingConfigs.debug
+        }
         release {
+            // রিলিজ বিল্ডেও আমাদের কাস্টম সিগনেচার ফোর্স করা হলো
+            signingConfig signingConfigs.debug 
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
@@ -24,7 +39,7 @@ android {
 }
 
 dependencies {
-    // Firebase Bill of Materials (BOM) - এটি অটোমেটিক ভার্সন কন্ট্রোল করবে
+    // Firebase Bill of Materials
     implementation platform('com.google.firebase:firebase-bom:32.7.0')
     
     // Firebase Auth (লগিন/সাইনআপের জন্য)
@@ -35,5 +50,8 @@ dependencies {
     
     // Google Sign-In লাইব্রেরি
     implementation 'com.google.android.gms:play-services-auth:20.7.0'
+    
+    // Lottie Animation লাইব্রেরি
+    implementation 'com.airbnb.android:lottie:6.1.0'
 }
 
