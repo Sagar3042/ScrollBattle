@@ -1,59 +1,92 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:id="@+id/main_layout"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:gravity="center"
-    android:padding="30dp"
-    android:background="#F4F1EA"> <!-- ন্যাচারাল স্কেচবুক পেপার কালার -->
+    android:padding="20dp"
+    android:background="#F4F1EA">
 
     <TextView
+        android:id="@+id/tv_title"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Scroll Battle"
         android:textSize="34sp"
         android:textStyle="bold|italic"
         android:textColor="#2C2C2C"
-        android:layout_marginBottom="10dp"/>
-        
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="10dp"/>
+
+    <!-- স্মার্ট পারমিশন ব্লক (পারমিশন দেওয়া থাকলে এটি হাইড হয়ে যাবে) -->
+    <LinearLayout
+        android:id="@+id/layout_permissions"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:layout_below="@id/tv_title"
+        android:layout_marginTop="20dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Required Permissions:"
+            android:textColor="#D32F2F"
+            android:textStyle="bold"
+            android:layout_marginBottom="10dp"/>
+
+        <Button
+            android:id="@+id/btn_overlay_permission"
+            android:layout_width="match_parent"
+            android:layout_height="60dp"
+            android:background="@drawable/sketch_button"
+            android:textColor="#333333"
+            android:textStyle="bold"
+            android:text="1. Grant Overlay Permission"/>
+
+        <Button
+            android:id="@+id/btn_accessibility_permission"
+            android:layout_width="match_parent"
+            android:layout_height="60dp"
+            android:layout_marginTop="10dp"
+            android:background="@drawable/sketch_button"
+            android:textColor="#333333"
+            android:textStyle="bold"
+            android:text="2. Enable Accessibility"/>
+    </LinearLayout>
+
+    <!-- গ্লোবাল লিডারবোর্ড সেকশন -->
     <TextView
+        android:id="@+id/tv_leaderboard_title"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Instagram Reels Tracker"
-        android:textSize="16sp"
-        android:textColor="#555555"
-        android:layout_marginBottom="50dp"/>
-
-    <Button
-        android:id="@+id/btn_overlay_permission"
-        android:layout_width="match_parent"
-        android:layout_height="65dp"
-        android:background="@drawable/sketch_button"
-        android:textColor="#333333"
+        android:text="🏆 Global Leaderboard 🏆"
+        android:textSize="20sp"
         android:textStyle="bold"
-        android:text="1. Grant Overlay Permission"/>
+        android:textColor="#2C2C2C"
+        android:layout_below="@id/layout_permissions"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="25dp"/>
 
-    <Button
-        android:id="@+id/btn_accessibility_permission"
+    <!-- লিডারবোর্ড লিস্ট যেখানে সবার র‍্যাঙ্ক রিয়েল-টাইমে আসবে -->
+    <ListView
+        android:id="@+id/list_leaderboard"
         android:layout_width="match_parent"
-        android:layout_height="65dp"
-        android:layout_marginTop="20dp"
-        android:background="@drawable/sketch_button"
-        android:textColor="#333333"
-        android:textStyle="bold"
-        android:text="2. Enable Accessibility"/>
+        android:layout_height="match_parent"
+        android:layout_below="@id/tv_leaderboard_title"
+        android:layout_above="@id/btn_start_app"
+        android:layout_marginTop="10dp"
+        android:layout_marginBottom="10dp"
+        android:divider="#888888"
+        android:dividerHeight="1dp"/>
 
-    <!-- কালার পেন্সিল স্টাইলের মেইন বাটন -->
     <Button
         android:id="@+id/btn_start_app"
         android:layout_width="match_parent"
         android:layout_height="65dp"
-        android:layout_marginTop="40dp"
+        android:layout_alignParentBottom="true"
         android:backgroundTint="#2C2C2C"
         android:textColor="#FDFBF7"
         android:textStyle="bold"
         android:text="START BATTLE"/>
 
-</LinearLayout>
+</RelativeLayout>
 

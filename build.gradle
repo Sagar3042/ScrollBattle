@@ -4,8 +4,9 @@ buildscript {
         mavenCentral()
     }
     dependencies {
-        // Android Gradle Plugin
         classpath 'com.android.tools.build:gradle:8.1.0'
+        // Firebase-এর জন্য Google Services প্লাগিন
+        classpath 'com.google.gms:google-services:4.4.0' 
     }
 }
 allprojects {
@@ -14,3 +15,4 @@ allprojects {
         mavenCentral()
     }
 }
+

@@ -1,5 +1,6 @@
 plugins {
     id 'com.android.application'
+    id 'com.google.gms.google-services' // Google Services প্লাগিন যুক্ত করা হলো
 }
 
 android {
@@ -23,5 +24,16 @@ android {
 }
 
 dependencies {
-    // এখানে আমরা পরে আমাদের প্রয়োজনীয় লাইব্রেরিগুলো যোগ করব
+    // Firebase Bill of Materials (BOM) - এটি অটোমেটিক ভার্সন কন্ট্রোল করবে
+    implementation platform('com.google.firebase:firebase-bom:32.7.0')
+    
+    // Firebase Auth (লগিন/সাইনআপের জন্য)
+    implementation 'com.google.firebase:firebase-auth'
+    
+    // Firebase Realtime Database (লিডারবোর্ডের জন্য)
+    implementation 'com.google.firebase:firebase-database'
+    
+    // Google Sign-In লাইব্রেরি
+    implementation 'com.google.android.gms:play-services-auth:20.7.0'
 }
+
