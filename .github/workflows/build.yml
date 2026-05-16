@@ -2,32 +2,31 @@ name: Build Scroll Battle APK
 
 on:
   push:
-    branches: [ "main", "master" ]
+    branches: [ "main" ]
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout Code
-      uses: actions/checkout@v4
+      - name: Checkout Code
+        uses: actions/checkout@v4
 
-    - name: Setup Java JDK
-      uses: actions/setup-java@v4
-      with:
-        java-version: '17'
-        distribution: 'temurin'
-        cache: gradle
+      - name: Setup Java JDK
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: gradle
 
-    - name: Make gradlew executable
-      run: chmod +x gradlew
+      - name: Make gradlew executable
+        run: chmod +x gradlew
 
-    - name: Build APK
-      run: ./gradlew assembleDebug
+      - name: Build APK
+        run: ./gradlew assembleDebug
 
-    - name: Upload APK
-      uses: actions/upload-artifact@v4
-      with:
-        name: ScrollBattle-App
-        path: app/build/outputs/apk/debug/app-debug.apk
-    ```
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: ScrollBattle-App
+          path: app/build/outputs/apk/debug/app-debug.apk
