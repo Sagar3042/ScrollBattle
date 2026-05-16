@@ -37,9 +37,9 @@ public class LoginActivity extends Activity {
 
         Button btnGoogleLogin = findViewById(R.id.btn_google_login);
 
-        // Google Sign-In Setup (এখানে তোমার Client ID বসাও)
+        // Google Sign-In Setup (ডাবল কোটেশন দিয়ে সঠিকভাবে আইডি বসানো হয়েছে)
         GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
-                .requestIdToken(https://499059166053-68bshad7elt069166vl00accklakhu5m.apps.googleusercontent.com) // <-- এখানে কপি করা আইডিটা বসাও
+                .requestIdToken("499059166053-68bshad7elt069166vl00accklakhu5m.apps.googleusercontent.com") 
                 .requestEmail()
                 .build();
         mGoogleSignInClient = GoogleSignIn.getClient(this, gso);
