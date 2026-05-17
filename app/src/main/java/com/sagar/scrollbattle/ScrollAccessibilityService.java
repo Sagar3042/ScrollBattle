@@ -4,46 +4,62 @@ import android.accessibilityservice.AccessibilityService;
 import android.content.Intent;
 import android.view.accessibility.AccessibilityEvent;
 import android.view.accessibility.AccessibilityNodeInfo;
+import java.util.List;
 
 public class ScrollAccessibilityService extends AccessibilityService {
-    private int lastScrollEventId = -1;
-    private long lastTriggerTime = 0;
+    private int lastItemIndex = -1;
+    private long lastScrollTime = 0;
 
     @Override
     public void onAccessibilityEvent(AccessibilityEvent event) {
         if (event.getEventType() == AccessibilityEvent.TYPE_VIEW_SCROLLED) {
-            AccessibilityNodeInfo source = event.getSource();
-            if (source == null) return;
+            CharSequence packageName = event.getPackageName();
+            CharSequence className = event.getClassName();
+            
+            if (packageName != null && packageName.toString().equals("com.instagram.android")) {
+                if (className != null && (className.toString().contains("RecyclerView") || className.toString().contains("ViewPager"))) {
+                    
+                    AccessibilityNodeInfo rootNode = getRootInActiveWindow();
+                    if (rootNode == null) return;
 
-            // শুধুমাত্র রিলস ফিডের মেইন ভিউপোর্ত ধরবে
-            String className = String.valueOf(event.getClassName());
-            if (className.contains("RecyclerView") || className.contains("ViewPager")) {
-                
-                // হার্ড-কোর ফিল্টার: শুধুমাত্র ভিডিও প্লেয়ার কম্পোনেন্ট চেক করবে
-                // প্রোফাইল বা হোম স্ক্রিনে ভিডিও এলিমেন্টগুলো "Playing" স্টেটে থাকে না
-                if (isReelsFeedActive(source)) {
-                    int eventId = event.hashCode();
+                    // স্মার্ট নেগেটিভ ফিল্টার: হোম বা প্রোফাইল স্ক্রিনের নির্দিষ্ট টেক্সট খুঁজবে
+                    boolean isFakeScreen = hasText(rootNode, "Edit profile") || 
+                                           hasText(rootNode, "Share profile") ||
+                                           hasText(rootNode, "Message") ||
+                                           hasText(rootNode, "Your story") ||
+                                           hasText(rootNode, "Search");
+
+                    rootNode.recycle();
+
+                    // যদি প্রোফাইল বা হোম স্ক্রিন হয়, তবে কাউন্টার এখানেই আটকে যাবে!
+                    if (isFakeScreen) {
+                        return;
+                    }
+
+                    // তার মানে এটি ১০০% রিলস স্ক্রিন! এবার কাউন্ট শুরু হবে...
+                    int currentIndex = event.getFromIndex();
                     long currentTime = System.currentTimeMillis();
-
-                    // বাউন্স প্রোটেকশন: দ্রুত স্ক্রল করলেও যেন একই ভিডিও বারবার কাউন্ট না হয়
-                    if (eventId != lastScrollEventId && (currentTime - lastTriggerTime > 600)) {
-                        lastScrollEventId = eventId;
-                        lastTriggerTime = currentTime;
-
-                        Intent intent = new Intent("UPDATE_COUNT");
-                        intent.setPackage(getPackageName());
-                        sendBroadcast(intent);
+                    
+                    if (currentIndex != -1 && currentIndex != lastItemIndex) {
+                        // ৫০০ মিলি-সেকেন্ডের বাউন্স প্রোটেকশন
+                        if (currentTime - lastScrollTime > 500) {
+                            lastItemIndex = currentIndex;
+                            lastScrollTime = currentTime;
+                            
+                            Intent intent = new Intent("UPDATE_COUNT");
+                            intent.setPackage(getPackageName());
+                            sendBroadcast(intent);
+                        }
                     }
                 }
             }
-            source.recycle();
         }
     }
 
-    private boolean isReelsFeedActive(AccessibilityNodeInfo node) {
-        // ইনস্টাগ্রাম রিলস ফিডে সবসময় একটি "Video" বা "Player" টাইপ এলিমেন্ট থাকে 
-        // যা হোম বা প্রোফাইল স্ক্রিনে থাকে না।
-        return node.toString().contains("Video") || node.toString().contains("Player");
+    // স্ক্রিনে নির্দিষ্ট কোনো লেখা আছে কি না, তা চেক করার ফাংশন
+    private boolean hasText(AccessibilityNodeInfo root, String text) {
+        List<AccessibilityNodeInfo> nodes = root.findAccessibilityNodeInfosByText(text);
+        return nodes != null && !nodes.isEmpty();
     }
 
     @Override
