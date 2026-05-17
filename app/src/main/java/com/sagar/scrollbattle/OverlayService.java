@@ -1,5 +1,9 @@
 package com.sagar.scrollbattle;
 
+import android.app.Notification;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.app.Service;
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -18,10 +22,15 @@ import android.view.WindowManager;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
+import androidx.annotation.NonNull;
+
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
 
 public class OverlayService extends Service {
     private WindowManager windowManager;
@@ -31,6 +40,7 @@ public class OverlayService extends Service {
     private int currentCount = 0;
     private Handler handler = new Handler();
     private DatabaseReference mRef;
+    private DatabaseReference notiRef;
 
     private Runnable hideOverlayRunnable = new Runnable() {
         @Override
@@ -47,7 +57,6 @@ public class OverlayService extends Service {
                 tvCount.setText("Reels: " + currentCount);
                 floatingView.setVisibility(View.VISIBLE);
                 
-                // ফায়ারবেসে স্কোর আপডেট করা
                 if (mRef != null) {
                     mRef.child("score").setValue(currentCount);
                 }
@@ -65,7 +74,6 @@ public class OverlayService extends Service {
         FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
         if (user != null) {
             mRef = FirebaseDatabase.getInstance().getReference("Users").child(user.getUid());
-            // আগের স্কোর ফায়ারবেস থেকে নিয়ে আসা
             mRef.child("score").get().addOnCompleteListener(task -> {
                 if (task.isSuccessful() && task.getResult().exists()) {
                     currentCount = task.getResult().getValue(Integer.class);
@@ -73,6 +81,26 @@ public class OverlayService extends Service {
                 }
             });
         }
+
+        // ================== নোটিফিকেশন লজিক শুরু ==================
+        createNotificationChannel();
+        notiRef = FirebaseDatabase.getInstance().getReference("GlobalNotification");
+        notiRef.addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                if (snapshot.exists()) {
+                    String msg = snapshot.child("message").getValue(String.class);
+                    Long time = snapshot.child("timestamp").getValue(Long.class);
+                    
+                    // মেসেজ যদি গত ১৫ সেকেন্ডের মধ্যে পাঠানো হয়, তবেই নোটিফিকেশন দেখাবে
+                    if (msg != null && time != null && (System.currentTimeMillis() - time < 15000)) {
+                        showSystemNotification(msg);
+                    }
+                }
+            }
+            @Override public void onCancelled(@NonNull DatabaseError error) {}
+        });
+        // ================== নোটিফিকেশন লজিক শেষ ==================
 
         windowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
         floatingView = new LinearLayout(this);
@@ -132,6 +160,41 @@ public class OverlayService extends Service {
         handler.postDelayed(hideOverlayRunnable, 2000);
     }
 
+    // নোটিফিকেশন চ্যানেল তৈরি করা (Android 8+ এর জন্য জরুরি)
+    private void createNotificationChannel() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            NotificationChannel channel = new NotificationChannel("admin_channel", "Admin Alerts", NotificationManager.IMPORTANCE_HIGH);
+            NotificationManager manager = getSystemService(NotificationManager.class);
+            if (manager != null) manager.createNotificationChannel(channel);
+        }
+    }
+
+    // আসল সিস্টেম নোটিফিকেশন তৈরি করা
+    private void showSystemNotification(String message) {
+        NotificationManager manager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+        
+        // নোটিফিকেশনে ক্লিক করলে অ্যাপ ওপেন হবে
+        Intent intent = new Intent(this, MainActivity.class);
+        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, intent, PendingIntent.FLAG_IMMUTABLE);
+
+        Notification.Builder builder;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            builder = new Notification.Builder(this, "admin_channel");
+        } else {
+            builder = new Notification.Builder(this);
+        }
+
+        builder.setContentTitle("📢 Admin Announcement")
+               .setContentText(message)
+               .setSmallIcon(android.R.drawable.ic_dialog_info) // নোটিফিকেশন আইকন
+               .setAutoCancel(true)
+               .setContentIntent(pendingIntent);
+
+        if (manager != null) {
+            manager.notify((int) System.currentTimeMillis(), builder.build());
+        }
+    }
+
     @Override
     public void onDestroy() {
         super.onDestroy();
@@ -139,5 +202,6 @@ public class OverlayService extends Service {
         unregisterReceiver(countReceiver);
         handler.removeCallbacks(hideOverlayRunnable);
     }
+    
     @Override public IBinder onBind(Intent intent) { return null; }
 }
