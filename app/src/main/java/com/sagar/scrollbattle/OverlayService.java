@@ -15,7 +15,6 @@ import android.view.Gravity;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.WindowManager;
-import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
@@ -25,16 +24,14 @@ public class OverlayService extends Service {
     private TextView tvCount;
     private WindowManager.LayoutParams params;
     private int currentCount = 0;
-    
-    // টাইমার কন্ট্রোল করার জন্য Handler
     private Handler handler = new Handler();
 
-    // ওভারলে লুকিয়ে ফেলার ম্যাজিক লজিক
+    // Overlay lukiye felyar automatic runnable
     private Runnable hideOverlayRunnable = new Runnable() {
         @Override
         public void run() {
             if (floatingView != null) {
-                floatingView.setVisibility(View.GONE); // অদৃশ্য করে দেওয়া
+                floatingView.setVisibility(View.GONE);
             }
         }
     };
@@ -46,10 +43,10 @@ public class OverlayService extends Service {
                 currentCount++;
                 tvCount.setText("Reels: " + currentCount);
                 
-                // রিলস স্ক্রল হলে ওভারলে আবার দৃশ্যমান হবে
+                // Reels scroll hole overlay drishoman hobe
                 floatingView.setVisibility(View.VISIBLE);
                 
-                // আগের টাইমার বাতিল করে নতুন ৭ সেকেন্ডের টাইমার চালু করা
+                // 7 second por abar automatic hide hoye jabe
                 handler.removeCallbacks(hideOverlayRunnable);
                 handler.postDelayed(hideOverlayRunnable, 7000);
             }
@@ -62,9 +59,9 @@ public class OverlayService extends Service {
         windowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
 
         floatingView = new LinearLayout(this);
-        floatingView.setOrientation(LinearLayout.HORIZONTAL); // পাশাপাশি রাখার জন্য
-        floatingView.setBackgroundResource(R.drawable.glass_card);
-        floatingView.setPadding(30, 20, 30, 20);
+        floatingView.setOrientation(LinearLayout.VERTICAL);
+        floatingView.setBackgroundResource(R.drawable.glass_card); // Glassmorphism look
+        floatingView.setPadding(45, 25, 45, 25);
         floatingView.setGravity(Gravity.CENTER);
 
         tvCount = new TextView(this);
@@ -72,19 +69,9 @@ public class OverlayService extends Service {
         tvCount.setTextColor(Color.WHITE);
         tvCount.setTextSize(18);
         tvCount.setTypeface(null, Typeface.BOLD);
-        
-        // কাটার (Close) বাটন তৈরি
-        Button btnClose = new Button(this);
-        btnClose.setText("X");
-        btnClose.setTextColor(Color.parseColor("#FF3B30")); // লাল রঙের 'X'
-        btnClose.setBackgroundColor(Color.TRANSPARENT);
-        btnClose.setTextSize(18);
-        btnClose.setPadding(30, 0, 0, 0);
-        btnClose.setOnClickListener(v -> stopSelf()); // ওভারলে পুরোপুরি বন্ধ করা
-
         floatingView.addView(tvCount);
-        floatingView.addView(btnClose);
 
+        // Screen er opor majhkhane (Top-Center) thakar layout params
         params = new WindowManager.LayoutParams(
                 WindowManager.LayoutParams.WRAP_CONTENT,
                 WindowManager.LayoutParams.WRAP_CONTENT,
@@ -92,13 +79,13 @@ public class OverlayService extends Service {
                 WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
                 PixelFormat.TRANSLUCENT);
 
-        params.gravity = Gravity.TOP | Gravity.START;
-        params.x = 20;
-        params.y = 300;
+        params.gravity = Gravity.TOP | Gravity.CENTER_HORIZONTAL;
+        params.x = 0;
+        params.y = 150; // Status bar theke ektu niche namano thakbe
 
         windowManager.addView(floatingView, params);
 
-        // ড্র্যাগ (টেনে সরানোর) লজিক
+        // User jate soriye (drag kore) jekono khane rakhte pare tar logic
         floatingView.setOnTouchListener(new View.OnTouchListener() {
             private int initialX, initialY;
             private float initialTouchX, initialTouchY;
@@ -111,8 +98,7 @@ public class OverlayService extends Service {
                         initialY = params.y;
                         initialTouchX = event.getRawX();
                         initialTouchY = event.getRawY();
-                        // টাচ করলে টাইমার রিস্টার্ট হবে যাতে ড্র্যাগ করার সময় লুকিয়ে না যায়
-                        handler.removeCallbacks(hideOverlayRunnable);
+                        handler.removeCallbacks(hideOverlayRunnable); // Drag korar somoy jano hide na hoy
                         return true;
                     case MotionEvent.ACTION_MOVE:
                         params.x = initialX + (int) (event.getRawX() - initialTouchX);
@@ -120,8 +106,7 @@ public class OverlayService extends Service {
                         windowManager.updateViewLayout(floatingView, params);
                         return true;
                     case MotionEvent.ACTION_UP:
-                        // ছেড়ে দিলে আবার ৭ সেকেন্ডের টাইমার চালু হবে
-                        handler.postDelayed(hideOverlayRunnable, 7000);
+                        handler.postDelayed(hideOverlayRunnable, 7000); // Chere dile 7 second por hide hobe
                         return true;
                 }
                 return false;
@@ -134,7 +119,7 @@ public class OverlayService extends Service {
             registerReceiver(countReceiver, new IntentFilter("UPDATE_COUNT"));
         }
 
-        // শুরুতে ২ সেকেন্ড পর ওভারলে অদৃশ্য হয়ে যাবে
+        // Prothome app chalu hole 2 second por automatic hide hoye jabe
         handler.postDelayed(hideOverlayRunnable, 2000);
     }
 
