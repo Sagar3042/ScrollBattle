@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:padding="15dp"
+    android:background="@drawable/glass_card"
+    android:layout_margin="8dp">
+
+    <!-- Rank -->
+    <TextView
+        android:id="@+id/tv_rank"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textSize="20sp"
+        android:textStyle="bold"
+        android:textColor="#FFFFFF"
+        android:layout_centerVertical="true"/>
+
+    <!-- User Name -->
+    <TextView
+        android:id="@+id/tv_name"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_toRightOf="@id/tv_rank"
+        android:layout_marginLeft="15dp"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        android:textColor="#FFFFFF"/>
+
+    <!-- Score -->
+    <TextView
+        android:id="@+id/tv_score"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/tv_name"
+        android:layout_toRightOf="@id/tv_rank"
+        android:layout_marginLeft="15dp"
+        android:textSize="14sp"
+        android:textColor="#BBBBBB"/>
+
+    <!-- Instagram Button (Top 3 এর জন্য) -->
+    <ImageView
+        android:id="@+id/btn_insta"
+        android:layout_width="35dp"
+        android:layout_height="35dp"
+        android:layout_alignParentRight="true"
+        android:layout_centerVertical="true"
+        android:src="@android:drawable/ic_menu_myplaces" 
+        android:backgroundTint="#E1306C"
+        android:visibility="gone"/> 
+        <!-- visibility="gone" রাখা হয়েছে, Java কোড থেকে শুধুমাত্র প্রথম ৩ জনের জন্য এটি visible করে দেওয়া হবে -->
+
+</RelativeLayout>

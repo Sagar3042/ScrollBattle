@@ -1,119 +1,79 @@
 package com.sagar.scrollbattle;
 
-import android.app.Notification;
-import android.app.NotificationChannel;
-import android.app.NotificationManager;
 import android.app.Service;
 import android.content.Intent;
 import android.graphics.PixelFormat;
 import android.os.Build;
-import android.os.Handler;
 import android.os.IBinder;
-import android.os.Looper;
 import android.view.Gravity;
-import android.view.LayoutInflater;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.WindowManager;
-import android.widget.TextView;
+import android.widget.ImageView;
+import android.widget.Toast;
 
 public class OverlayService extends Service {
-
     private WindowManager windowManager;
-    private View floatingView;
-    private TextView textScrollCount;
-    private boolean isOverlayAdded = false;
-
-    // ১০ সেকেন্ড পর অটো-হাইড করার জন্য টাইমার এবং হ্যান্ডলার
-    private final Handler hideHandler = new Handler(Looper.getMainLooper());
-    private final Runnable hideRunnable = new Runnable() {
-        @Override
-        public void run() {
-            if (floatingView != null) {
-                floatingView.setVisibility(View.GONE);
-            }
-        }
-    };
-
-    @Override
-    public IBinder onBind(Intent intent) { return null; }
+    private ImageView floatingIcon;
+    private WindowManager.LayoutParams params;
 
     @Override
     public void onCreate() {
         super.onCreate();
-        
-        // Foreground Service Notification
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            NotificationChannel channel = new NotificationChannel(
-                    "ScrollBattleChannel", "Scroll Battle", NotificationManager.IMPORTANCE_LOW);
-            NotificationManager manager = getSystemService(NotificationManager.class);
-            if (manager != null) manager.createNotificationChannel(channel);
-            
-            Notification notification = new Notification.Builder(this, "ScrollBattleChannel")
-                    .setContentTitle("Scroll Battle Running")
-                    .setContentText("Ready to track reels...")
-                    .setSmallIcon(android.R.drawable.ic_dialog_info)
-                    .build();
-            startForeground(1, notification);
-        }
-
-        // Floating View Setup
         windowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
-        floatingView = LayoutInflater.from(this).inflate(R.layout.floating_layout, null);
-        textScrollCount = floatingView.findViewById(R.id.text_scroll_count);
 
-        // শুরুতে ওভারলে পুরোপুরি লুকিয়ে থাকবে
-        floatingView.setVisibility(View.GONE);
+        floatingIcon = new ImageView(this);
+        // কিউট একটি ডিফল্ট আইকন সেট করা হলো
+        floatingIcon.setImageResource(android.R.drawable.ic_menu_camera); 
+        floatingIcon.setBackgroundResource(android.R.drawable.btn_default); 
 
-        int layoutFlag = (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) ? 
-                WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY : WindowManager.LayoutParams.TYPE_PHONE;
-
-        WindowManager.LayoutParams params = new WindowManager.LayoutParams(
-                WindowManager.LayoutParams.WRAP_CONTENT,
-                WindowManager.LayoutParams.WRAP_CONTENT,
-                layoutFlag,
+        params = new WindowManager.LayoutParams(
+                150, 150, // ওভারলে সাইজ (ছোট এবং সুন্দর)
+                Build.VERSION.SDK_INT >= Build.VERSION_CODES.O ? WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY : WindowManager.LayoutParams.TYPE_PHONE,
                 WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
                 PixelFormat.TRANSLUCENT);
 
-        params.gravity = Gravity.TOP | Gravity.CENTER_HORIZONTAL;
-        params.y = 150; // স্ক্রিনের সামান্য নিচে যাতে নোটিফিকেশন বারে ধাক্কা না খায়
+        params.gravity = Gravity.TOP | Gravity.START;
+        params.x = 0;
+        params.y = 200;
 
-        windowManager.addView(floatingView, params);
-        isOverlayAdded = true;
-    }
+        // ড্র্যাগ (টেনে সরানোর) লজিক এবং লাভ অ্যানিমেশন
+        floatingIcon.setOnTouchListener(new View.OnTouchListener() {
+            private int initialX, initialY;
+            private float initialTouchX, initialTouchY;
 
-    @Override
-    public int onStartCommand(Intent intent, int flags, int startId) {
-        if (intent != null && intent.hasExtra("ACTION")) {
-            String action = intent.getStringExtra("ACTION");
-            
-            if (action.equals("UPDATE_COUNT")) {
-                int count = intent.getIntExtra("SCROLL_COUNT", 0);
-                if (textScrollCount != null) {
-                    textScrollCount.setText("Reels Scrolled: " + count);
+            @Override
+            public boolean onTouch(View v, MotionEvent event) {
+                switch (event.getAction()) {
+                    case MotionEvent.ACTION_DOWN:
+                        initialX = params.x;
+                        initialY = params.y;
+                        initialTouchX = event.getRawX();
+                        initialTouchY = event.getRawY();
+                        return true;
+                    case MotionEvent.ACTION_MOVE:
+                        params.x = initialX + (int) (event.getRawX() - initialTouchX);
+                        params.y = initialY + (int) (event.getRawY() - initialTouchY);
+                        windowManager.updateViewLayout(floatingIcon, params);
+                        return true;
+                    case MotionEvent.ACTION_UP:
+                        // ক্লিক করলে কিউট লাভ মেসেজ
+                        Toast.makeText(OverlayService.this, "💖 +1 Reels Scrolled!", Toast.LENGTH_SHORT).show();
+                        return true;
                 }
-
-                // ১. স্ক্রল করার সাথে সাথে ওভারলে শো করো
-                if (floatingView != null) {
-                    floatingView.setVisibility(View.VISIBLE);
-                }
-
-                // ২. আগের কোনো রানিং টাইমার থাকলে তা বাতিল (Reset) করো
-                hideHandler.removeCallbacks(hideRunnable);
-
-                // ৩. নতুন করে ঠিক ১০ সেকেন্ড (10,000 মিলিসেকেন্ড) পর হাইড করার টাইমার সেট করো
-                hideHandler.postDelayed(hideRunnable, 10000);
+                return false;
             }
-        }
-        return START_STICKY;
+        });
+        windowManager.addView(floatingIcon, params);
     }
 
     @Override
     public void onDestroy() {
         super.onDestroy();
-        hideHandler.removeCallbacks(hideRunnable);
-        if (floatingView != null && isOverlayAdded) {
-            windowManager.removeView(floatingView);
-        }
+        if (floatingIcon != null) windowManager.removeView(floatingIcon);
     }
+    
+    @Override
+    public IBinder onBind(Intent intent) { return null; }
 }
 
