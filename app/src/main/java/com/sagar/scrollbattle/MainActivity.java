@@ -6,7 +6,9 @@ import android.content.Intent;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
+import android.provider.Settings;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.Window;
@@ -36,7 +38,6 @@ public class MainActivity extends Activity {
     private String currentInstaUser = "";
     private LinearLayout leaderboardContainer;
 
-    // লিডারবোর্ডের জন্য একটি ছোট্ট ক্লাস
     private class UserScore implements Comparable<UserScore> {
         String name, instaUser;
         int score;
@@ -45,17 +46,18 @@ public class MainActivity extends Activity {
         }
         @Override
         public int compareTo(UserScore other) {
-            return Integer.compare(other.score, this.score); // বেশি স্কোর ওপরে থাকবে
+            return Integer.compare(other.score, this.score);
         }
     }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
-
+        
         mAuth = FirebaseAuth.getInstance();
         FirebaseUser user = mAuth.getCurrentUser();
+        
+        // ১. যদি লগিন না থাকে, লগিন পেজে পাঠাবে
         if (user == null) {
             startActivity(new Intent(this, LoginActivity.class));
             finish();
@@ -63,9 +65,36 @@ public class MainActivity extends Activity {
         }
 
         usersRef = FirebaseDatabase.getInstance().getReference("Users");
-        leaderboardContainer = findViewById(R.id.leaderboard_container);
         
-        // নিজের ইন্সটাগ্রাম আইডি লোড করা
+        // ২. Smart Router: প্রোফাইল ও পারমিশন চেক করা
+        usersRef.child(user.getUid()).get().addOnCompleteListener(task -> {
+            if (task.isSuccessful()) {
+                
+                // যদি প্রোফাইল (Instagram ID) না থাকে, প্রোফাইল পেজে পাঠাবে
+                if (!task.getResult().hasChild("instaUser") || task.getResult().child("instaUser").getValue(String.class).isEmpty()) {
+                    startActivity(new Intent(MainActivity.this, ProfileActivity.class));
+                    finish();
+                    return;
+                }
+                
+                // যদি পারমিশন দেওয়া না থাকে, পারমিশন পেজে পাঠাবে
+                if ((Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !Settings.canDrawOverlays(this)) || !isAccessibilityServiceEnabled()) {
+                    startActivity(new Intent(MainActivity.this, PermissionActivity.class));
+                    finish();
+                    return;
+                }
+
+                // ৩. সবকিছু ঠিক থাকলে, লিডারবোর্ড ওপেন করবে
+                initMainUI(user);
+            }
+        });
+    }
+
+    // লিডারবোর্ড ও UI সেটআপ করার লজিক
+    private void initMainUI(FirebaseUser user) {
+        setContentView(R.layout.activity_main);
+        leaderboardContainer = findViewById(R.id.leaderboard_container);
+
         usersRef.child(user.getUid()).child("instaUser").addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
@@ -80,10 +109,27 @@ public class MainActivity extends Activity {
             launchInstagram();
         });
 
-        // লিডারবোর্ড লোড করার ম্যাজিক লজিক
         loadLeaderboard();
     }
 
+    // অ্যাকসেসিবিলিটি চেক করার মাস্টার মেথড
+    private boolean isAccessibilityServiceEnabled() {
+        int accessibilityEnabled = 0;
+        try {
+            accessibilityEnabled = Settings.Secure.getInt(getContentResolver(), Settings.Secure.ACCESSIBILITY_ENABLED);
+        } catch (Settings.SettingNotFoundException e) {
+            e.printStackTrace();
+        }
+        if (accessibilityEnabled == 1) {
+            String settingValue = Settings.Secure.getString(getContentResolver(), Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES);
+            if (settingValue != null) {
+                return settingValue.contains(getPackageName() + "/" + ScrollAccessibilityService.class.getName());
+            }
+        }
+        return false;
+    }
+
+    // লিডারবোর্ড লোড করা
     private void loadLeaderboard() {
         usersRef.addValueEventListener(new ValueEventListener() {
             @Override
@@ -101,7 +147,7 @@ public class MainActivity extends Activity {
                     }
                 }
                 
-                Collections.sort(userList); // স্কোর অনুযায়ী সাজানো (Top to Bottom)
+                Collections.sort(userList);
                 leaderboardContainer.removeAllViews();
                 
                 LayoutInflater inflater = LayoutInflater.from(MainActivity.this);
@@ -118,7 +164,6 @@ public class MainActivity extends Activity {
                     tvName.setText(us.name);
                     tvScore.setText("Reels: " + us.score);
                     
-                    // প্রথম ৩ জনের জন্য ইন্সটাগ্রাম বাটন দৃশ্যমান হবে
                     if (i < 3 && us.instaUser != null && !us.instaUser.isEmpty()) {
                         btnInsta.setVisibility(View.VISIBLE);
                         btnInsta.setOnClickListener(v -> {
@@ -134,6 +179,7 @@ public class MainActivity extends Activity {
         });
     }
 
+    // ৩-লাইন মেনু (পপ-আপ)
     private void showProfileMenu(FirebaseUser user) {
         Dialog dialog = new Dialog(this);
         dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
@@ -178,3 +224,4 @@ public class MainActivity extends Activity {
         }
     }
 }
+
