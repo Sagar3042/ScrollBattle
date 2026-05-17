@@ -2,91 +2,84 @@
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:padding="20dp"
-    android:background="#F4F1EA">
+    android:background="#0F0F0F"
+    android:padding="20dp">
 
     <TextView
         android:id="@+id/tv_title"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Scroll Battle"
-        android:textSize="34sp"
-        android:textStyle="bold|italic"
-        android:textColor="#2C2C2C"
+        android:text="Scroll Battle Profile"
+        android:textColor="#FFFFFF"
+        android:textSize="28sp"
+        android:textStyle="bold"
         android:layout_centerHorizontal="true"
-        android:layout_marginTop="10dp"/>
+        android:layout_marginTop="20dp"
+        android:layout_marginBottom="20dp"/>
 
-    <!-- স্মার্ট পারমিশন ব্লক (পারমিশন দেওয়া থাকলে এটি হাইড হয়ে যাবে) -->
+    <!-- Profile Section (Glassmorphism Card) -->
     <LinearLayout
-        android:id="@+id/layout_permissions"
+        android:id="@+id/profile_card"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
         android:layout_below="@id/tv_title"
-        android:layout_marginTop="20dp">
+        android:background="@drawable/glass_card"
+        android:orientation="vertical"
+        android:padding="20dp"
+        android:elevation="10dp">
 
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Required Permissions:"
-            android:textColor="#D32F2F"
-            android:textStyle="bold"
+        <EditText
+            android:id="@+id/et_first_name"
+            android:layout_width="match_parent"
+            android:layout_height="50dp"
+            android:hint="First Name"
+            android:textColorHint="#888888"
+            android:textColor="#FFFFFF"
+            android:backgroundTint="#FFFFFF"
             android:layout_marginBottom="10dp"/>
 
-        <Button
-            android:id="@+id/btn_overlay_permission"
+        <EditText
+            android:id="@+id/et_last_name"
             android:layout_width="match_parent"
-            android:layout_height="60dp"
-            android:background="@drawable/sketch_button"
-            android:textColor="#333333"
-            android:textStyle="bold"
-            android:text="1. Grant Overlay Permission"/>
+            android:layout_height="50dp"
+            android:hint="Last Name"
+            android:textColorHint="#888888"
+            android:textColor="#FFFFFF"
+            android:backgroundTint="#FFFFFF"
+            android:layout_marginBottom="10dp"/>
+
+        <EditText
+            android:id="@+id/et_insta"
+            android:layout_width="match_parent"
+            android:layout_height="50dp"
+            android:hint="Instagram Username"
+            android:textColorHint="#888888"
+            android:textColor="#FFFFFF"
+            android:backgroundTint="#FFFFFF"
+            android:layout_marginBottom="20dp"/>
 
         <Button
-            android:id="@+id/btn_accessibility_permission"
+            android:id="@+id/btn_save_profile"
             android:layout_width="match_parent"
-            android:layout_height="60dp"
-            android:layout_marginTop="10dp"
-            android:background="@drawable/sketch_button"
-            android:textColor="#333333"
+            android:layout_height="55dp"
+            android:text="Save Profile"
+            android:backgroundTint="#E1306C"
             android:textStyle="bold"
-            android:text="2. Enable Accessibility"/>
+            android:textColor="#FFFFFF"/>
     </LinearLayout>
 
-    <!-- গ্লোবাল লিডারবোর্ড সেকশন -->
-    <TextView
-        android:id="@+id/tv_leaderboard_title"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="🏆 Global Leaderboard 🏆"
-        android:textSize="20sp"
-        android:textStyle="bold"
-        android:textColor="#2C2C2C"
-        android:layout_below="@id/layout_permissions"
-        android:layout_centerHorizontal="true"
-        android:layout_marginTop="25dp"/>
-
-    <!-- লিডারবোর্ড লিস্ট যেখানে সবার র‍্যাঙ্ক রিয়েল-টাইমে আসবে -->
-    <ListView
-        android:id="@+id/list_leaderboard"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_below="@id/tv_leaderboard_title"
-        android:layout_above="@id/btn_start_app"
-        android:layout_marginTop="10dp"
-        android:layout_marginBottom="10dp"
-        android:divider="#888888"
-        android:dividerHeight="1dp"/>
-
+    <!-- Start Battle Button (এই বাটনের জন্যই এরর আসছিল) -->
     <Button
-        android:id="@+id/btn_start_app"
+        android:id="@+id/btn_start_battle"
         android:layout_width="match_parent"
         android:layout_height="65dp"
-        android:layout_alignParentBottom="true"
-        android:backgroundTint="#2C2C2C"
-        android:textColor="#FDFBF7"
+        android:layout_below="@id/profile_card"
+        android:layout_marginTop="40dp"
+        android:text="Start Battle &amp; Open Instagram"
+        android:textSize="16sp"
         android:textStyle="bold"
-        android:text="START BATTLE"/>
+        android:backgroundTint="#FFFFFF"
+        android:textColor="#000000"/>
 
 </RelativeLayout>
 
