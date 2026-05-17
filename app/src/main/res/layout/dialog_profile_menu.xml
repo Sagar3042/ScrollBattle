@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="25dp"
+    android:background="@drawable/glass_card"
+    android:gravity="center">
+
+    <TextView
+        android:id="@+id/tv_menu_name"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="User Name"
+        android:textColor="#FFFFFF"
+        android:textSize="22sp"
+        android:textStyle="bold" />
+
+    <TextView
+        android:id="@+id/tv_menu_email"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="user@email.com"
+        android:textColor="#AAAAAA"
+        android:textSize="14sp"
+        android:layout_marginBottom="25dp"/>
+
+    <EditText
+        android:id="@+id/et_menu_insta"
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:hint="Instagram Username"
+        android:textColorHint="#888888"
+        android:textColor="#000000"
+        android:backgroundTint="#FFFFFF"
+        android:background="#DDDDDD"
+        android:padding="10dp"
+        android:layout_marginBottom="15dp"/>
+
+    <Button
+        android:id="@+id/btn_menu_update"
+        android:layout_width="match_parent"
+        android:layout_height="55dp"
+        android:text="Update Instagram"
+        android:backgroundTint="#1E90FF"
+        android:textColor="#FFFFFF"
+        android:layout_marginBottom="10dp"/>
+
+    <Button
+        android:id="@+id/btn_menu_logout"
+        android:layout_width="match_parent"
+        android:layout_height="55dp"
+        android:text="Logout"
+        android:backgroundTint="#FF3B30"
+        android:textColor="#FFFFFF"/>
+</LinearLayout>

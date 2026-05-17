@@ -5,100 +5,60 @@
     android:background="#0F0F0F"
     android:padding="20dp">
 
-    <TextView
-        android:id="@+id/tv_title"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Scroll Battle Profile"
-        android:textColor="#FFFFFF"
-        android:textSize="28sp"
-        android:textStyle="bold"
-        android:layout_centerHorizontal="true"
-        android:layout_marginTop="20dp"
-        android:layout_marginBottom="20dp"/>
-
-    <LinearLayout
-        android:id="@+id/profile_card"
+    <!-- Header Section -->
+    <RelativeLayout
+        android:id="@+id/header"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_below="@id/tv_title"
-        android:background="@drawable/glass_card"
-        android:orientation="vertical"
-        android:padding="20dp"
-        android:elevation="10dp">
+        android:layout_marginBottom="20dp">
 
-        <EditText
-            android:id="@+id/et_first_name"
-            android:layout_width="match_parent"
-            android:layout_height="50dp"
-            android:hint="First Name"
-            android:textColorHint="#888888"
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Leaderboard"
             android:textColor="#FFFFFF"
-            android:backgroundTint="#FFFFFF"
-            android:layout_marginBottom="10dp"/>
-
-        <EditText
-            android:id="@+id/et_last_name"
-            android:layout_width="match_parent"
-            android:layout_height="50dp"
-            android:hint="Last Name"
-            android:textColorHint="#888888"
-            android:textColor="#FFFFFF"
-            android:backgroundTint="#FFFFFF"
-            android:layout_marginBottom="10dp"/>
-
-        <EditText
-            android:id="@+id/et_insta"
-            android:layout_width="match_parent"
-            android:layout_height="50dp"
-            android:hint="Instagram Username"
-            android:textColorHint="#888888"
-            android:textColor="#FFFFFF"
-            android:backgroundTint="#FFFFFF"
-            android:layout_marginBottom="20dp"/>
-
-        <Button
-            android:id="@+id/btn_save_profile"
-            android:layout_width="match_parent"
-            android:layout_height="55dp"
-            android:text="Save Profile"
-            android:backgroundTint="#E1306C"
+            android:textSize="28sp"
             android:textStyle="bold"
-            android:textColor="#FFFFFF"/>
-    </LinearLayout>
+            android:layout_centerVertical="true"/>
+
+        <!-- 3-Line Menu Icon (☰) -->
+        <TextView
+            android:id="@+id/btn_menu"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="☰" 
+            android:textColor="#FFFFFF"
+            android:textSize="35sp"
+            android:layout_alignParentRight="true"
+            android:layout_centerVertical="true"/>
+    </RelativeLayout>
+
+    <!-- Leaderboard List Area (এখানে পরে ইউজারদের র‍্যাংক বসবে) -->
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_below="@id/header"
+        android:layout_above="@id/btn_start_battle"
+        android:layout_marginBottom="20dp">
+        
+        <LinearLayout
+            android:id="@+id/leaderboard_container"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+            <!-- ফায়ারবেস থেকে ডেটা এনে এখানে দেখানো হবে -->
+        </LinearLayout>
+    </ScrollView>
 
     <Button
         android:id="@+id/btn_start_battle"
         android:layout_width="match_parent"
         android:layout_height="65dp"
-        android:layout_below="@id/profile_card"
-        android:layout_marginTop="30dp"
+        android:layout_alignParentBottom="true"
         android:text="Start Battle &amp; Open Instagram"
         android:textSize="16sp"
         android:textStyle="bold"
-        android:backgroundTint="#FFFFFF"
-        android:textColor="#000000"/>
-
-    <Button
-        android:id="@+id/btn_share"
-        android:layout_width="match_parent"
-        android:layout_height="55dp"
-        android:layout_below="@id/btn_start_battle"
-        android:layout_marginTop="15dp"
-        android:text="Share App"
-        android:backgroundTint="#1E90FF"
-        android:textStyle="bold"
-        android:textColor="#FFFFFF"/>
-
-    <Button
-        android:id="@+id/btn_logout"
-        android:layout_width="match_parent"
-        android:layout_height="55dp"
-        android:layout_below="@id/btn_share"
-        android:layout_marginTop="15dp"
-        android:text="Logout"
-        android:backgroundTint="#FF3B30"
-        android:textStyle="bold"
+        android:backgroundTint="#E1306C"
         android:textColor="#FFFFFF"/>
 
 </RelativeLayout>

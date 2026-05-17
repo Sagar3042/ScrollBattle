@@ -5,8 +5,6 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
-
-    <!-- এই অংশটুকু ইনস্টাগ্রামকে খুঁজে পাওয়ার জন্য জরুরি (Android 11+) -->
     <queries>
         <package android:name="com.instagram.android" />
     </queries>
@@ -25,22 +23,22 @@
             </intent-filter>
         </activity>
 
+        <!-- নতুন পেজগুলো এখানে অ্যাড করা হলো -->
+        <activity android:name=".ProfileActivity" android:exported="false" />
+        <activity android:name=".PermissionActivity" android:exported="false" />
+        
+        <!-- মেইন পেজ (Leaderboard) -->
         <activity android:name=".MainActivity" android:exported="false" />
 
         <service android:name=".OverlayService" android:exported="false" />
-
-        <service
-            android:name=".ScrollAccessibilityService"
+        <service android:name=".ScrollAccessibilityService"
             android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.accessibilityservice.AccessibilityService" />
             </intent-filter>
-            <meta-data
-                android:name="android.accessibilityservice"
-                android:resource="@xml/accessibility_service_config" />
+            <meta-data android:name="android.accessibilityservice" android:resource="@xml/accessibility_service_config" />
         </service>
-
         <service android:name=".FCMService" android:exported="true">
             <intent-filter>
                 <action android:name="com.google.firebase.MESSAGING_EVENT" />
@@ -48,4 +46,3 @@
         </service>
     </application>
 </manifest>
-

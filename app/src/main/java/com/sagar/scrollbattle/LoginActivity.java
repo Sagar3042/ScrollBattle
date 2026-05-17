@@ -80,7 +80,7 @@ public class LoginActivity extends Activity {
     }
 
     private void goToMainActivity() {
-        startActivity(new Intent(LoginActivity.this, MainActivity.class));
+        startActivity(new Intent(LoginActivity.this, ProfileActivity.class));
         finish();
     }
 }
