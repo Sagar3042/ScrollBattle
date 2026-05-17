@@ -18,6 +18,11 @@ import android.view.WindowManager;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+
 public class OverlayService extends Service {
     private WindowManager windowManager;
     private LinearLayout floatingView;
@@ -25,14 +30,12 @@ public class OverlayService extends Service {
     private WindowManager.LayoutParams params;
     private int currentCount = 0;
     private Handler handler = new Handler();
+    private DatabaseReference mRef;
 
-    // Overlay lukiye felyar automatic runnable
     private Runnable hideOverlayRunnable = new Runnable() {
         @Override
         public void run() {
-            if (floatingView != null) {
-                floatingView.setVisibility(View.GONE);
-            }
+            if (floatingView != null) floatingView.setVisibility(View.GONE);
         }
     };
 
@@ -42,11 +45,13 @@ public class OverlayService extends Service {
             if (intent.getAction().equals("UPDATE_COUNT")) {
                 currentCount++;
                 tvCount.setText("Reels: " + currentCount);
-                
-                // Reels scroll hole overlay drishoman hobe
                 floatingView.setVisibility(View.VISIBLE);
                 
-                // 7 second por abar automatic hide hoye jabe
+                // ফায়ারবেসে স্কোর আপডেট করা
+                if (mRef != null) {
+                    mRef.child("score").setValue(currentCount);
+                }
+                
                 handler.removeCallbacks(hideOverlayRunnable);
                 handler.postDelayed(hideOverlayRunnable, 7000);
             }
@@ -56,11 +61,23 @@ public class OverlayService extends Service {
     @Override
     public void onCreate() {
         super.onCreate();
-        windowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
+        
+        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+        if (user != null) {
+            mRef = FirebaseDatabase.getInstance().getReference("Users").child(user.getUid());
+            // আগের স্কোর ফায়ারবেস থেকে নিয়ে আসা
+            mRef.child("score").get().addOnCompleteListener(task -> {
+                if (task.isSuccessful() && task.getResult().exists()) {
+                    currentCount = task.getResult().getValue(Integer.class);
+                    if(tvCount != null) tvCount.setText("Reels: " + currentCount);
+                }
+            });
+        }
 
+        windowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
         floatingView = new LinearLayout(this);
         floatingView.setOrientation(LinearLayout.VERTICAL);
-        floatingView.setBackgroundResource(R.drawable.glass_card); // Glassmorphism look
+        floatingView.setBackgroundResource(R.drawable.glass_card); 
         floatingView.setPadding(45, 25, 45, 25);
         floatingView.setGravity(Gravity.CENTER);
 
@@ -71,21 +88,17 @@ public class OverlayService extends Service {
         tvCount.setTypeface(null, Typeface.BOLD);
         floatingView.addView(tvCount);
 
-        // Screen er opor majhkhane (Top-Center) thakar layout params
         params = new WindowManager.LayoutParams(
-                WindowManager.LayoutParams.WRAP_CONTENT,
-                WindowManager.LayoutParams.WRAP_CONTENT,
+                WindowManager.LayoutParams.WRAP_CONTENT, WindowManager.LayoutParams.WRAP_CONTENT,
                 Build.VERSION.SDK_INT >= Build.VERSION_CODES.O ? WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY : WindowManager.LayoutParams.TYPE_PHONE,
-                WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
-                PixelFormat.TRANSLUCENT);
+                WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE, PixelFormat.TRANSLUCENT);
 
         params.gravity = Gravity.TOP | Gravity.CENTER_HORIZONTAL;
         params.x = 0;
-        params.y = 150; // Status bar theke ektu niche namano thakbe
+        params.y = 150; 
 
         windowManager.addView(floatingView, params);
 
-        // User jate soriye (drag kore) jekono khane rakhte pare tar logic
         floatingView.setOnTouchListener(new View.OnTouchListener() {
             private int initialX, initialY;
             private float initialTouchX, initialTouchY;
@@ -94,11 +107,9 @@ public class OverlayService extends Service {
             public boolean onTouch(View v, MotionEvent event) {
                 switch (event.getAction()) {
                     case MotionEvent.ACTION_DOWN:
-                        initialX = params.x;
-                        initialY = params.y;
-                        initialTouchX = event.getRawX();
-                        initialTouchY = event.getRawY();
-                        handler.removeCallbacks(hideOverlayRunnable); // Drag korar somoy jano hide na hoy
+                        initialX = params.x; initialY = params.y;
+                        initialTouchX = event.getRawX(); initialTouchY = event.getRawY();
+                        handler.removeCallbacks(hideOverlayRunnable); 
                         return true;
                     case MotionEvent.ACTION_MOVE:
                         params.x = initialX + (int) (event.getRawX() - initialTouchX);
@@ -106,7 +117,7 @@ public class OverlayService extends Service {
                         windowManager.updateViewLayout(floatingView, params);
                         return true;
                     case MotionEvent.ACTION_UP:
-                        handler.postDelayed(hideOverlayRunnable, 7000); // Chere dile 7 second por hide hobe
+                        handler.postDelayed(hideOverlayRunnable, 7000); 
                         return true;
                 }
                 return false;
@@ -118,8 +129,6 @@ public class OverlayService extends Service {
         } else {
             registerReceiver(countReceiver, new IntentFilter("UPDATE_COUNT"));
         }
-
-        // Prothome app chalu hole 2 second por automatic hide hoye jabe
         handler.postDelayed(hideOverlayRunnable, 2000);
     }
 
@@ -130,7 +139,5 @@ public class OverlayService extends Service {
         unregisterReceiver(countReceiver);
         handler.removeCallbacks(hideOverlayRunnable);
     }
-
-    @Override
-    public IBinder onBind(Intent intent) { return null; }
+    @Override public IBinder onBind(Intent intent) { return null; }
 }

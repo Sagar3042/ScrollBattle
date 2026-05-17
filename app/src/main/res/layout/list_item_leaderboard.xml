@@ -4,50 +4,54 @@
     android:layout_height="wrap_content"
     android:padding="15dp"
     android:background="@drawable/glass_card"
-    android:layout_margin="8dp">
+    android:layout_marginBottom="10dp">
 
     <!-- Rank -->
     <TextView
         android:id="@+id/tv_rank"
-        android:layout_width="wrap_content"
+        android:layout_width="40dp"
         android:layout_height="wrap_content"
-        android:textSize="20sp"
+        android:textSize="22sp"
         android:textStyle="bold"
         android:textColor="#FFFFFF"
         android:layout_centerVertical="true"/>
 
-    <!-- User Name -->
-    <TextView
-        android:id="@+id/tv_name"
+    <!-- Name & Score -->
+    <LinearLayout
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:orientation="vertical"
         android:layout_toRightOf="@id/tv_rank"
-        android:layout_marginLeft="15dp"
-        android:textSize="18sp"
-        android:textStyle="bold"
-        android:textColor="#FFFFFF"/>
+        android:layout_centerVertical="true">
+        
+        <TextView
+            android:id="@+id/tv_name"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:textColor="#FFFFFF"/>
 
-    <!-- Score -->
-    <TextView
-        android:id="@+id/tv_score"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_below="@id/tv_name"
-        android:layout_toRightOf="@id/tv_rank"
-        android:layout_marginLeft="15dp"
-        android:textSize="14sp"
-        android:textColor="#BBBBBB"/>
+        <TextView
+            android:id="@+id/tv_score"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="14sp"
+            android:textColor="#E1306C"
+            android:textStyle="bold"/>
+    </LinearLayout>
 
     <!-- Instagram Button (Top 3 এর জন্য) -->
-    <ImageView
-        android:id="@+id/btn_insta"
-        android:layout_width="35dp"
-        android:layout_height="35dp"
+    <Button
+        android:id="@+id/btn_insta_link"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
         android:layout_alignParentRight="true"
         android:layout_centerVertical="true"
-        android:src="@android:drawable/ic_menu_myplaces" 
         android:backgroundTint="#E1306C"
+        android:text="Ig"
+        android:textColor="#FFFFFF"
+        android:textStyle="bold"
         android:visibility="gone"/> 
-        <!-- visibility="gone" রাখা হয়েছে, Java কোড থেকে শুধুমাত্র প্রথম ৩ জনের জন্য এটি visible করে দেওয়া হবে -->
-
 </RelativeLayout>
+
