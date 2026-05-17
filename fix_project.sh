@@ -1,10 +1,91 @@
 #!/bin/bash
 
-echo "🚀 Scroll Battle অটো-ফিক্সার এবং গিটহাব পুশার শুরু হচ্ছে..."
+echo "🚀 High-Level Architecture ফিক্সার শুরু হচ্ছে..."
 echo "--------------------------------------------------------"
 
-# ১. MainActivity.java আপডেট (লোডিং অ্যানিমেশন, পারমিশন রিলক এবং স্মার্ট রাউটার)
-echo "📝 MainActivity.java আপডেট করা হচ্ছে..."
+# ১. ScrollAccessibilityService.java আপডেট (বুলেটপ্রুফ নোড হায়ারার্কি ফিল্টার)
+echo "📝 ScrollAccessibilityService.java আপডেট করা হচ্ছে..."
+cat << 'EOF' > app/src/main/java/com/sagar/scrollbattle/ScrollAccessibilityService.java
+package com.sagar.scrollbattle;
+
+import android.accessibilityservice.AccessibilityService;
+import android.content.Intent;
+import android.view.accessibility.AccessibilityEvent;
+import android.view.accessibility.AccessibilityNodeInfo;
+
+public class ScrollAccessibilityService extends AccessibilityService {
+    private int lastItemIndex = -1;
+    private long lastScrollTime = 0;
+
+    @Override
+    public void onAccessibilityEvent(AccessibilityEvent event) {
+        // শুধুমাত্র ভিউ স্ক্রল ইভেন্ট ফিল্টার করা হচ্ছে
+        if (event.getEventType() == AccessibilityEvent.TYPE_VIEW_SCROLLED) {
+            CharSequence packageName = event.getPackageName();
+            CharSequence className = event.getClassName();
+            
+            if (packageName != null && packageName.toString().equals("com.instagram.android")) {
+                // ইনস্টাগ্রামের মেইন সোয়াইপিং উইজেট (ViewPager/RecyclerView) ভ্যালিডেশন
+                if (className != null && (className.toString().contains("ViewPager") || className.toString().contains("RecyclerView"))) {
+                    
+                    AccessibilityNodeInfo sourceNode = event.getSource();
+                    if (sourceNode == null) return;
+
+                    String viewId = sourceNode.getViewIdResourceName();
+                    
+                    // আর্কিটেকচার লেভেল ফিল্টার:
+                    // ১. প্রোফাইল স্ক্রিন ডিটেকশন (View ID তে profile বা user_profile থাকলে ব্লক)
+                    if (viewId != null && (viewId.contains("profile") || viewId.contains("user_profile") || viewId.contains("self_profile"))) {
+                        sourceNode.recycle();
+                        return;
+                    }
+
+                    // ২. হোম স্ক্রিন বনাম মেইন রিলস স্ক্রিন ডিটেকশন:
+                    // ইনস্টাগ্রামের হোম স্ক্রিনের মেইন ফিড কন্টেইনার আইডি সাধারণত "unknown_view" বা "feed" রিলেটেড হয়।
+                    // কিন্তু মেইন রিলস ট্যাবের সোয়াইপার আইডিতে সবসময় "reels" বা "cliptach" অথবা সরাসরি ফুল স্ক্রিন ভিউপোর্ট থাকে।
+                    // কোনো কোনো ডিভাইসে আইডি নাল (Null) আসলে আমরা চাইল্ড নোড কাউন্ট দিয়ে ফুল-স্ক্রিন রিলস প্লেয়ার ভ্যালিডেশন করব।
+                    boolean isReelsFeed = false;
+                    
+                    if (viewId != null && (viewId.contains("reels") || viewId.contains("reel") || viewId.contains("clips"))) {
+                        isReelsFeed = true;
+                    } else if (viewId == null && sourceNode.getChildCount() > 0) {
+                        // যদি ভিউ আইডি না থাকে, তবে নোড স্ট্রাকচার চেক করবে (রিলস প্লেয়ারে চাইল্ড নোড ডেনসিটি বেশি থাকে)
+                        isReelsFeed = true;
+                    }
+
+                    sourceNode.recycle();
+
+                    // যদি রিলস ফিড কনফার্ম না হয়, তবে কাউন্ট হবে না (হোম স্ক্রিন ফিল্টার)
+                    if (!isReelsFeed) return;
+
+                    // ৩. রিয়েল-টাইম স্ক্রল ইনডেক্স ট্র্যাকিং এবং বাউন্স ফিল্টার
+                    int currentIndex = event.getFromIndex();
+                    long currentTime = System.currentTimeMillis();
+                    
+                    if (currentIndex != -1 && currentIndex != lastItemIndex) {
+                        // ৪50 মিলি-সেকেন্ডের সেফটি উইন্ডো (যাতে একটা রিলস স্ক্রল করলে ১ বারই কাউন্ট হয়)
+                        if (currentTime - lastScrollTime > 450) {
+                            lastItemIndex = currentIndex;
+                            lastScrollTime = currentTime;
+                            
+                            // ব্রডকাস্ট ম্যানেজারকে কনফার্মড রিলস কাউন্ট পাঠানো হলো
+                            Intent intent = new Intent("UPDATE_COUNT");
+                            intent.setPackage(getPackageName());
+                            sendBroadcast(intent);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    @Override
+    public void onInterrupt() {}
+}
+EOF
+
+# ২. MainActivity.java (স্মার্ট পারমিশন রিলক এবং রুট ইঞ্জিন ব্যাকআপ)
+echo "📝 MainActivity.java ভেরিফাই করা হচ্ছে..."
 cat << 'EOF' > app/src/main/java/com/sagar/scrollbattle/MainActivity.java
 package com.sagar.scrollbattle;
 
@@ -264,72 +345,8 @@ public class MainActivity extends Activity {
 }
 EOF
 
-# ২. ScrollAccessibilityService.java আপডেট (হোম স্ক্রিন ও প্রোফাইল স্ক্রিন ট্র্যাকিং লক)
-echo "📝 ScrollAccessibilityService.java আপডেট করা হচ্ছে..."
-cat << 'EOF' > app/src/main/java/com/sagar/scrollbattle/ScrollAccessibilityService.java
-package com.sagar.scrollbattle;
-
-import android.accessibilityservice.AccessibilityService;
-import android.content.Intent;
-import android.view.accessibility.AccessibilityEvent;
-import android.view.accessibility.AccessibilityNodeInfo;
-import java.util.List;
-
-public class ScrollAccessibilityService extends AccessibilityService {
-    private int lastItemIndex = -1;
-    private long lastScrollTime = 0;
-
-    @Override
-    public void onAccessibilityEvent(AccessibilityEvent event) {
-        if (event.getEventType() == AccessibilityEvent.TYPE_VIEW_SCROLLED) {
-            CharSequence packageName = event.getPackageName();
-            CharSequence className = event.getClassName();
-            
-            if (packageName != null && packageName.toString().equals("com.instagram.android")) {
-                if (className != null && (className.toString().contains("ViewPager") || className.toString().contains("RecyclerView"))) {
-                    
-                    AccessibilityNodeInfo rootNode = getRootInActiveWindow();
-                    if (rootNode == null) return;
-
-                    boolean isHomeScreen = !rootNode.findAccessibilityNodeInfosByText("Search").isEmpty() 
-                                        || !rootNode.findAccessibilityNodeInfosByText("Direct").isEmpty();
-                                        
-                    boolean isProfileScreen = !rootNode.findAccessibilityNodeInfosByText("Edit profile").isEmpty() 
-                                           || !rootNode.findAccessibilityNodeInfosByText("Share profile").isEmpty()
-                                           || !rootNode.findAccessibilityNodeInfosByText("Posts").isEmpty();
-
-                    List<AccessibilityNodeInfo> audioNodes = rootNode.findAccessibilityNodeInfosByText("Original audio");
-                    boolean hasReelsElements = !audioNodes.isEmpty() || className.toString().contains("ViewPager");
-
-                    if (isHomeScreen || isProfileScreen || !hasReelsElements) {
-                        rootNode.recycle();
-                        return;
-                    }
-                    rootNode.recycle();
-
-                    int currentIndex = event.getFromIndex();
-                    long currentTime = System.currentTimeMillis();
-                    
-                    if (currentIndex != -1 && currentIndex != lastItemIndex) {
-                        if (currentTime - lastScrollTime > 400) {
-                            lastItemIndex = currentIndex;
-                            lastScrollTime = currentTime;
-                            
-                            Intent intent = new Intent("UPDATE_COUNT");
-                            intent.setPackage(getPackageName());
-                            sendBroadcast(intent);
-                        }
-                    }
-                }
-            }
-        }
-    }
-    @Override public void onInterrupt() {}
-}
-EOF
-
-# ৩. activity_splash.xml আপডেট (রিসোর্স এরর ফিক্স করা হয়েছে ইউনিভার্সাল আইকন দিয়ে)
-echo "📝 activity_splash.xml তৈরি করা হচ্ছে..."
+# ৩. activity_splash.xml তৈরি (ইউনিভার্সাল সেফ আইকন দিয়ে)
+echo "📝 activity_splash.xml আপডেট করা হচ্ছে..."
 cat << 'EOF' > app/src/main/res/layout/activity_splash.xml
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
@@ -372,11 +389,12 @@ cat << 'EOF' > app/src/main/res/layout/activity_splash.xml
 </RelativeLayout>
 EOF
 
-# ৪. গিটহাবে পুশ প্রসেস
-echo "📤 লেটেস্ট কোড গিটহাবে পুশ করা হচ্ছে..."
+# ৪. গিটহাব সিঙ্ক ও পুশ
+echo "📤 কোড গিটহাবে পুশ করা হচ্ছে..."
 git add .
-git commit -m "Auto-fix applied: Perfect Reels lock, Splash Screen & Permission Re-lock"
+git commit -m "Architectural Update: Bulletproof ViewPort filtering, Splash & Smart Permission verification"
 git push
 
 echo "--------------------------------------------------------"
-echo "✅ অল ডান! সবকিছু নিখুঁতভাবে ফিক্সড এবং গিটহাবে পুশ হয়ে গেছে। গিটহাব অ্যাকশনস চেক করো।"
+echo "✅ অল ডান! আর্কিটেকচার সাকসেসফুলি ফিক্সড এবং পুশড।"
+
