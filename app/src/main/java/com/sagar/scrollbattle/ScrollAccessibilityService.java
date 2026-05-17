@@ -4,7 +4,6 @@ import android.accessibilityservice.AccessibilityService;
 import android.content.Intent;
 import android.view.accessibility.AccessibilityEvent;
 import android.view.accessibility.AccessibilityNodeInfo;
-import java.util.List;
 
 public class ScrollAccessibilityService extends AccessibilityService {
     private int lastItemIndex = -1;
@@ -19,29 +18,26 @@ public class ScrollAccessibilityService extends AccessibilityService {
             if (packageName != null && packageName.toString().equals("com.instagram.android")) {
                 if (className != null && (className.toString().contains("RecyclerView") || className.toString().contains("ViewPager"))) {
                     
-                    AccessibilityNodeInfo rootNode = getRootInActiveWindow();
-                    if (rootNode == null) return;
+                    AccessibilityNodeInfo source = event.getSource();
+                    if (source == null) return;
 
-                    // স্মার্ট নেগেটিভ ফিল্টার: হোম বা প্রোফাইল স্ক্রিনের নির্দিষ্ট টেক্সট খুঁজবে
-                    boolean isFakeScreen = hasText(rootNode, "Edit profile") || 
-                                           hasText(rootNode, "Share profile") ||
-                                           hasText(rootNode, "Message") ||
-                                           hasText(rootNode, "Your story") ||
-                                           hasText(rootNode, "Search");
+                    // 🧠 ম্যাজিক স্ট্রাকচারাল ফিল্টার:
+                    // রিলস ফিড ফুল-স্ক্রিন হওয়ায় এর ভেতরে একসাথে ১ বা ২টির বেশি চাইল্ড আইটেম থাকতে পারে না।
+                    // কিন্তু প্রোফাইল গ্রিড বা হোম ফিডে একসাথে অনেকগুলো আইটেম (৩-এর বেশি) থাকে।
+                    int childCount = source.getChildCount();
+                    source.recycle();
 
-                    rootNode.recycle();
-
-                    // যদি প্রোফাইল বা হোম স্ক্রিন হয়, তবে কাউন্টার এখানেই আটকে যাবে!
-                    if (isFakeScreen) {
-                        return;
+                    // যদি স্ক্রিনে ৩টির বেশি আইটেম থাকে, তার মানে ওটা প্রোফাইল বা হোম স্ক্রিন। কাউন্ট ব্লক!
+                    if (childCount == 0 || childCount > 3) {
+                        return; 
                     }
 
-                    // তার মানে এটি ১০০% রিলস স্ক্রিন! এবার কাউন্ট শুরু হবে...
+                    // তার মানে এটি ১০০% ফুল-স্ক্রিন রিলস ভিউ! এবার কাউন্ট শুরু হবে...
                     int currentIndex = event.getFromIndex();
                     long currentTime = System.currentTimeMillis();
                     
                     if (currentIndex != -1 && currentIndex != lastItemIndex) {
-                        // ৫০০ মিলি-সেকেন্ডের বাউন্স প্রোটেকশন
+                        // ৫০০ মিলি-সেকেন্ডের বাউন্স প্রোটেকশন (যাতে একই রিলস বারবার কাউন্ট না হয়)
                         if (currentTime - lastScrollTime > 500) {
                             lastItemIndex = currentIndex;
                             lastScrollTime = currentTime;
@@ -54,12 +50,6 @@ public class ScrollAccessibilityService extends AccessibilityService {
                 }
             }
         }
-    }
-
-    // স্ক্রিনে নির্দিষ্ট কোনো লেখা আছে কি না, তা চেক করার ফাংশন
-    private boolean hasText(AccessibilityNodeInfo root, String text) {
-        List<AccessibilityNodeInfo> nodes = root.findAccessibilityNodeInfosByText(text);
-        return nodes != null && !nodes.isEmpty();
     }
 
     @Override
