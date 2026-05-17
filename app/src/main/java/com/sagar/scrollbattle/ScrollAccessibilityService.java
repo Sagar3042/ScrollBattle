@@ -3,10 +3,10 @@ package com.sagar.scrollbattle;
 import android.accessibilityservice.AccessibilityService;
 import android.content.Intent;
 import android.view.accessibility.AccessibilityEvent;
+import android.view.accessibility.AccessibilityNodeInfo;
 
 public class ScrollAccessibilityService extends AccessibilityService {
     
-    // আগের দেখা রিলস-এর সিরিয়াল নম্বর (Index) মনে রাখার জন্য ভ্যারিয়েবল
     private int lastItemIndex = -1;
     private long lastScrollTime = 0;
 
@@ -19,25 +19,36 @@ public class ScrollAccessibilityService extends AccessibilityService {
             
             if (packageName != null && packageName.toString().equals("com.instagram.android")) {
                 
-                // শুধুমাত্র মেইন রিলস কন্টেইনার স্ক্রল হলেই চেক করবে
-                if (className != null && (className.toString().contains("RecyclerView") || className.toString().contains("ViewPager"))) {
+                // ১. বেসিক ভ্যালিডেশন: শুধুমাত্র রিলস বা ভিডিও স্ক্রলিং কন্টেইনার চেক হবে
+                if (className != null && (className.toString().contains("ViewPager") || className.toString().contains("RecyclerView"))) {
                     
-                    // অ্যান্ড্রয়েড নিজে থেকে বলে দেবে এখন লিস্টের কত নম্বর রিলস চলছে
+                    // ২. কড়া সিকিউরিটি চেক: প্রোফাইল বা অন্য স্ক্রিন আটকাতে উইন্ডো সোর্স চেক করা
+                    AccessibilityNodeInfo source = event.getSource();
+                    if (source != null) {
+                        String viewId = source.getViewIdResourceName();
+                        
+                        // ইনস্টাগ্রামের মেইন রিলস ট্যাবের স্পেসিফিক ভিউ আইডি বা প্যাটার্ন লক করা
+                        // প্রোফাইল পেজের স্ক্রলিং আইডিতে 'profile' বা 'user' টেক্সট থাকে, সেগুলোকে আমরা ব্লক করব
+                        if (viewId != null && (viewId.contains("profile") || viewId.contains("user_profile") || viewId.contains("self_profile"))) {
+                            source.recycle();
+                            return; // কারো প্রোফাইলে স্ক্রল করলে এখানেই কোড আটকে যাবে, কাউন্ট হবে না
+                        }
+                        source.recycle();
+                    }
+
                     int currentIndex = event.getFromIndex();
                     long currentTime = System.currentTimeMillis();
                     
-                    // লজিক: 
-                    // ১. যদি Index পাওয়া যায় (currentIndex != -1)
-                    // ২. এবং যদি নতুন রিলসের নম্বর আগের রিলসের নম্বরের চেয়ে আলাদা হয় (currentIndex != lastItemIndex)
+                    // ৩. রিলস ইনডেক্স ট্র্যাকিং লজিক
                     if (currentIndex != -1 && currentIndex != lastItemIndex) {
                         
-                        // ডবল স্ক্রল গ্লিচ বা বাউন্স আটকাতে মাত্র ৪০০ মিলি-সেকেন্ডের একটি ছোট্ট গ্যাপ
+                        // ডবল বা ফেক স্ক্রল আটকাতে ৪০০ মিলি-সেকেন্ডের সেফটি বাফার
                         if (currentTime - lastScrollTime > 400) {
                             
-                            lastItemIndex = currentIndex; // নতুন রিলসের নম্বর সেভ করে রাখা হলো
+                            lastItemIndex = currentIndex;
                             lastScrollTime = currentTime;
                             
-                            // একদম কনফার্ম ১ কাউন্ট পাঠানো হলো
+                            // ১০০% কনফার্ম রিলস কাউন্ট ব্রডকাস্ট পাঠানো হলো
                             Intent intent = new Intent("UPDATE_COUNT");
                             intent.setPackage(getPackageName());
                             sendBroadcast(intent);
