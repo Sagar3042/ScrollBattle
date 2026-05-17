@@ -1,3 +1,11 @@
+#!/bin/bash
+
+echo "🚀 Scroll Battle অটো-ফিক্সার এবং গিটহাব পুশার শুরু হচ্ছে..."
+echo "--------------------------------------------------------"
+
+# ১. MainActivity.java আপডেট (লোডিং অ্যানিমেশন, পারমিশন রিলক এবং স্মার্ট রাউটার)
+echo "📝 MainActivity.java আপডেট করা হচ্ছে..."
+cat << 'EOF' > app/src/main/java/com/sagar/scrollbattle/MainActivity.java
 package com.sagar.scrollbattle;
 
 import android.app.Activity;
@@ -254,3 +262,121 @@ public class MainActivity extends Activity {
         }
     }
 }
+EOF
+
+# ২. ScrollAccessibilityService.java আপডেট (হোম স্ক্রিন ও প্রোফাইল স্ক্রিন ট্র্যাকিং লক)
+echo "📝 ScrollAccessibilityService.java আপডেট করা হচ্ছে..."
+cat << 'EOF' > app/src/main/java/com/sagar/scrollbattle/ScrollAccessibilityService.java
+package com.sagar.scrollbattle;
+
+import android.accessibilityservice.AccessibilityService;
+import android.content.Intent;
+import android.view.accessibility.AccessibilityEvent;
+import android.view.accessibility.AccessibilityNodeInfo;
+import java.util.List;
+
+public class ScrollAccessibilityService extends AccessibilityService {
+    private int lastItemIndex = -1;
+    private long lastScrollTime = 0;
+
+    @Override
+    public void onAccessibilityEvent(AccessibilityEvent event) {
+        if (event.getEventType() == AccessibilityEvent.TYPE_VIEW_SCROLLED) {
+            CharSequence packageName = event.getPackageName();
+            CharSequence className = event.getClassName();
+            
+            if (packageName != null && packageName.toString().equals("com.instagram.android")) {
+                if (className != null && (className.toString().contains("ViewPager") || className.toString().contains("RecyclerView"))) {
+                    
+                    AccessibilityNodeInfo rootNode = getRootInActiveWindow();
+                    if (rootNode == null) return;
+
+                    boolean isHomeScreen = !rootNode.findAccessibilityNodeInfosByText("Search").isEmpty() 
+                                        || !rootNode.findAccessibilityNodeInfosByText("Direct").isEmpty();
+                                        
+                    boolean isProfileScreen = !rootNode.findAccessibilityNodeInfosByText("Edit profile").isEmpty() 
+                                           || !rootNode.findAccessibilityNodeInfosByText("Share profile").isEmpty()
+                                           || !rootNode.findAccessibilityNodeInfosByText("Posts").isEmpty();
+
+                    List<AccessibilityNodeInfo> audioNodes = rootNode.findAccessibilityNodeInfosByText("Original audio");
+                    boolean hasReelsElements = !audioNodes.isEmpty() || className.toString().contains("ViewPager");
+
+                    if (isHomeScreen || isProfileScreen || !hasReelsElements) {
+                        rootNode.recycle();
+                        return;
+                    }
+                    rootNode.recycle();
+
+                    int currentIndex = event.getFromIndex();
+                    long currentTime = System.currentTimeMillis();
+                    
+                    if (currentIndex != -1 && currentIndex != lastItemIndex) {
+                        if (currentTime - lastScrollTime > 400) {
+                            lastItemIndex = currentIndex;
+                            lastScrollTime = currentTime;
+                            
+                            Intent intent = new Intent("UPDATE_COUNT");
+                            intent.setPackage(getPackageName());
+                            sendBroadcast(intent);
+                        }
+                    }
+                }
+            }
+        }
+    }
+    @Override public void onInterrupt() {}
+}
+EOF
+
+# ৩. activity_splash.xml আপডেট (রিসোর্স এরর ফিক্স করা হয়েছে ইউনিভার্সাল আইকন দিয়ে)
+echo "📝 activity_splash.xml তৈরি করা হচ্ছে..."
+cat << 'EOF' > app/src/main/res/layout/activity_splash.xml
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#FDFBF7">
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:gravity="center"
+        android:layout_centerInParent="true">
+
+        <ImageView
+            android:id="@+id/splash_logo"
+            android:layout_width="120dp"
+            android:layout_height="120dp"
+            android:src="@android:drawable/sym_def_app_icon"
+            android:contentDescription="App Logo" />
+
+        <TextView
+            android:id="@+id/splash_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Scroll Battle"
+            android:textSize="32sp"
+            android:textStyle="bold"
+            android:textColor="#2C2C2C"
+            android:layout_marginTop="20dp"
+            android:fontFamily="sans-serif-medium"/>
+
+        <ProgressBar
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_marginTop="30dp"
+            android:indeterminateTint="#2C2C2C" />
+            
+    </LinearLayout>
+</RelativeLayout>
+EOF
+
+# ৪. গিটহাবে পুশ প্রসেস
+echo "📤 লেটেস্ট কোড গিটহাবে পুশ করা হচ্ছে..."
+git add .
+git commit -m "Auto-fix applied: Perfect Reels lock, Splash Screen & Permission Re-lock"
+git push
+
+echo "--------------------------------------------------------"
+echo "✅ অল ডান! সবকিছু নিখুঁতভাবে ফিক্সড এবং গিটহাবে পুশ হয়ে গেছে। গিটহাব অ্যাকশনস চেক করো।"
