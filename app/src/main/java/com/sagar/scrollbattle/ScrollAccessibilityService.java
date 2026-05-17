@@ -17,7 +17,7 @@ public class ScrollAccessibilityService extends AccessibilityService {
                 long currentTime = System.currentTimeMillis();
                 // একটি রিলস সম্পূর্ণ দেখতে/স্ক্রল করতে সময় লাগে। 
                 // তাই আগের স্ক্রল থেকে অন্তত ২৫০০ মিলিসেকেন্ড (২.৫ সেকেন্ড) পার হলে তবেই কাউন্ট হবে।
-                if (currentTime - lastScrollTime > 2500) {
+                if (currentTime - lastScrollTime > 1000) {
                     lastScrollTime = currentTime;
                     Intent intent = new Intent("UPDATE_COUNT");
                     intent.setPackage(getPackageName());
