@@ -8,12 +8,16 @@ import android.graphics.drawable.ColorDrawable;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
 import android.provider.Settings;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.Window;
+import android.view.animation.Animation;
+import android.view.animation.AnimationUtils;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -27,6 +31,7 @@ import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
+import com.google.firebase.messaging.FirebaseMessaging;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -54,43 +59,78 @@ public class MainActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         
+        // প্রথমে প্রফেশনাল লোডিং/স্প্ল্যাশ স্ক্রিন লেআউট সেট করা হচ্ছে
+        setContentView(R.layout.activity_splash);
+        
+        // লোডিং স্ক্রিনের লোগো এবং টেক্সটে সুন্দর Fade-In এবং Bounce অ্যানিমেশন
+        ImageView splashLogo = findViewById(R.id.splash_logo);
+        TextView splashTitle = findViewById(R.id.splash_title);
+        
+        Animation fadeIn = AnimationUtils.loadAnimation(this, android.R.anim.fade_in);
+        fadeIn.setDuration(1200);
+        if (splashLogo != null) splashLogo.startAnimation(fadeIn);
+        if (splashTitle != null) splashTitle.startAnimation(fadeIn);
+
         mAuth = FirebaseAuth.getInstance();
         FirebaseUser user = mAuth.getCurrentUser();
-        
-        // ১. যদি লগিন না থাকে, লগিন পেজে পাঠাবে
-        if (user == null) {
-            startActivity(new Intent(this, LoginActivity.class));
-            finish();
-            return;
-        }
 
-        usersRef = FirebaseDatabase.getInstance().getReference("Users");
-        
-        // ২. Smart Router: প্রোফাইল ও পারমিশন চেক করা
+        // ২ সেকেন্ডের সুন্দর অ্যানিমেশন হোল্ড করার পর পারমিশন ও রাউটিং চেক হবে
+        new Handler().postDelayed(() -> {
+            if (user == null) {
+                startActivity(new Intent(MainActivity.this, LoginActivity.class));
+                finish();
+                return;
+            }
+
+            FirebaseMessaging.getInstance().subscribeToTopic("all_users");
+            usersRef = FirebaseDatabase.getInstance().getReference("Users");
+
+            // কড়া সিকিউরিটি এবং পারমিশন রিলক লজিক
+            checkPermissionsAndRoute(user);
+        }, 2000); 
+    }
+
+    // প্রতিবার অ্যাপে ঢোকার সময় বা অ্যাপ মিনিমাইজ থেকে ওপেন হওয়ার সময় পারমিশন চেক করবে
+    @Override
+    protected void onResume() {
+        super.onResume();
+        FirebaseUser user = mAuth.getCurrentUser();
+        if (user != null && usersRef != null) {
+            // যদি ইউজার মেইন স্ক্রিনে থাকে এবং হঠাৎ পারমিশন বন্ধ করে দেয়, তবে আবার লক স্ক্রিনে পাঠাবে
+            if ((Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !Settings.canDrawOverlays(this)) || 
+                !isAccessibilityServiceEnabled()) {
+                startActivity(new Intent(MainActivity.this, PermissionActivity.class));
+                finish();
+            }
+        }
+    }
+
+    private void checkPermissionsAndRoute(FirebaseUser user) {
         usersRef.child(user.getUid()).get().addOnCompleteListener(task -> {
             if (task.isSuccessful()) {
-                
-                // যদি প্রোফাইল (Instagram ID) না থাকে, প্রোফাইল পেজে পাঠাবে
-                if (!task.getResult().hasChild("instaUser") || task.getResult().child("instaUser").getValue(String.class).isEmpty()) {
+                if (!task.getResult().hasChild("instaUser") || 
+                    task.getResult().child("instaUser").getValue(String.class).isEmpty()) {
                     startActivity(new Intent(MainActivity.this, ProfileActivity.class));
                     finish();
                     return;
                 }
-                
-                // যদি পারমিশন দেওয়া না থাকে, পারমিশন পেজে পাঠাবে
-                if ((Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !Settings.canDrawOverlays(this)) || !isAccessibilityServiceEnabled()) {
+
+                // যদি কোনো পারমিশন বন্ধ থাকে, তবে মেইন অ্যাপ খুলবেই না, ডাইরেক্ট পারমিশন পেজে লক হবে
+                if ((Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !Settings.canDrawOverlays(this)) || 
+                    !isAccessibilityServiceEnabled()) {
                     startActivity(new Intent(MainActivity.this, PermissionActivity.class));
                     finish();
                     return;
                 }
 
-                // ৩. সবকিছু ঠিক থাকলে, লিডারবোর্ড ওপেন করবে
+                // সব ঠিক থাকলে মেইন ইউজার ইন্টারফেস লোড হবে
+                initMainUI(user);
+            } else {
                 initMainUI(user);
             }
         });
     }
 
-    // লিডারবোর্ড ও UI সেটআপ করার লজিক
     private void initMainUI(FirebaseUser user) {
         setContentView(R.layout.activity_main);
         leaderboardContainer = findViewById(R.id.leaderboard_container);
@@ -112,7 +152,6 @@ public class MainActivity extends Activity {
         loadLeaderboard();
     }
 
-    // অ্যাকসেসিবিলিটি চেক করার মাস্টার মেথড
     private boolean isAccessibilityServiceEnabled() {
         int accessibilityEnabled = 0;
         try {
@@ -129,7 +168,6 @@ public class MainActivity extends Activity {
         return false;
     }
 
-    // লিডারবোর্ড লোড করা
     private void loadLeaderboard() {
         usersRef.addValueEventListener(new ValueEventListener() {
             @Override
@@ -148,38 +186,40 @@ public class MainActivity extends Activity {
                 }
                 
                 Collections.sort(userList);
-                leaderboardContainer.removeAllViews();
                 
-                LayoutInflater inflater = LayoutInflater.from(MainActivity.this);
-                for (int i = 0; i < userList.size(); i++) {
-                    View rowView = inflater.inflate(R.layout.list_item_leaderboard, leaderboardContainer, false);
+                if (leaderboardContainer != null) {
+                    leaderboardContainer.removeAllViews();
+                    LayoutInflater inflater = LayoutInflater.from(MainActivity.this);
                     
-                    TextView tvRank = rowView.findViewById(R.id.tv_rank);
-                    TextView tvName = rowView.findViewById(R.id.tv_name);
-                    TextView tvScore = rowView.findViewById(R.id.tv_score);
-                    Button btnInsta = rowView.findViewById(R.id.btn_insta_link);
-                    
-                    UserScore us = userList.get(i);
-                    tvRank.setText("#" + (i + 1));
-                    tvName.setText(us.name);
-                    tvScore.setText("Reels: " + us.score);
-                    
-                    if (i < 3 && us.instaUser != null && !us.instaUser.isEmpty()) {
-                        btnInsta.setVisibility(View.VISIBLE);
-                        btnInsta.setOnClickListener(v -> {
-                            String url = "https://instagram.com/" + us.instaUser.replace("@", "");
-                            Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
-                            startActivity(intent);
-                        });
+                    for (int i = 0; i < userList.size(); i++) {
+                        View rowView = inflater.inflate(R.layout.list_item_leaderboard, leaderboardContainer, false);
+                        
+                        TextView tvRank = rowView.findViewById(R.id.tv_rank);
+                        TextView tvName = rowView.findViewById(R.id.tv_name);
+                        TextView tvScore = rowView.findViewById(R.id.tv_score);
+                        Button btnInsta = rowView.findViewById(R.id.btn_insta_link);
+                        
+                        UserScore us = userList.get(i);
+                        tvRank.setText("#" + (i + 1));
+                        tvName.setText(us.name);
+                        tvScore.setText("Reels: " + us.score);
+                        
+                        if (i < 3 && us.instaUser != null && !us.instaUser.isEmpty()) {
+                            btnInsta.setVisibility(View.VISIBLE);
+                            btnInsta.setOnClickListener(v -> {
+                                String url = "https://instagram.com/" + us.instaUser.replace("@", "");
+                                Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
+                                startActivity(intent);
+                            });
+                        }
+                        leaderboardContainer.addView(rowView);
                     }
-                    leaderboardContainer.addView(rowView);
                 }
             }
             @Override public void onCancelled(@NonNull DatabaseError error) {}
         });
     }
 
-    // ৩-লাইন মেনু (পপ-আপ)
     private void showProfileMenu(FirebaseUser user) {
         Dialog dialog = new Dialog(this);
         dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);

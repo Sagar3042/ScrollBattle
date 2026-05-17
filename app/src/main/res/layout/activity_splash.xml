@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#FDFBF7"> <!-- স্কেচবুক পেপার কালার -->
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:gravity="center"
+        android:layout_centerInParent="true">
+
+        <!-- লোগো ইমেজ (ডিফল্ট অ্যান্ড্রয়েড ড্রয়েবল আইকন ব্যবহার করা হয়েছে) -->
+        <ImageView
+            android:id="@+id/splash_logo"
+            android:layout_width="120dp"
+            android:layout_height="120dp"
+            android:src="@mipmap/ic_launcher"
+            android:contentDescription="App Logo" />
+
+        <TextView
+            android:id="@+id/splash_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Scroll Battle"
+            android:textSize="32sp"
+            android:textStyle="bold"
+            android:textColor="#2C2C2C"
+            android:layout_marginTop="20dp"
+            android:fontFamily="sans-serif-medium"/>
+
+        <!-- ছোট সুন্দর প্রগ্রেসবার লোডিং অ্যানিমেশনের জন্য -->
+        <ProgressBar
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_marginTop="30dp"
+            android:indeterminateTint="#2C2C2C" />
+            
+    </LinearLayout>
+</RelativeLayout>
